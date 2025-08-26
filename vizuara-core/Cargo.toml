@@ -1,0 +1,17 @@
+[package]
+name = "vizuara-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core data structures and traits for Vizuara"
+authors = ["Vizuara Contributors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/vizuara/vizuara"
+
+[dependencies]
+nalgebra = { workspace = true, features = ["serde-serialize"] }
+serde = { workspace = true }
+thiserror = { workspace = true }
+bytemuck = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }

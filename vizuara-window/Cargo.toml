@@ -1,0 +1,15 @@
+[package]
+name = "vizuara-window"
+version = "0.1.0"
+edition = "2021"
+description = "Window management for Vizuara"
+authors = ["Vizuara Contributors"]
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+vizuara-core = { path = "../vizuara-core" }
+vizuara-wgpu = { path = "../vizuara-wgpu" }
+winit = { workspace = true }
+wgpu = { workspace = true }
+nalgebra = { workspace = true }
+tokio = { workspace = true }

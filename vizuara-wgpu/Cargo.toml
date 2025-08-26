@@ -1,0 +1,15 @@
+[package]
+name = "vizuara-wgpu"
+version = "0.1.0"
+edition = "2021"
+description = "WGPU-based renderer for Vizuara"
+authors = ["Vizuara Contributors"]
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+vizuara-core = { path = "../vizuara-core" }
+wgpu = { workspace = true }
+winit = { workspace = true }
+nalgebra = { workspace = true }
+bytemuck = { workspace = true, features = ["derive"] }
+anyhow = { workspace = true }

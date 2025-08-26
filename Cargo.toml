@@ -1,0 +1,51 @@
+[workspace]
+members = [
+    "vizuara-core",
+    "vizuara-wgpu", 
+    "vizuara-window",
+    "vizuara-scene",
+    "vizuara-plots",
+    "vizuara-components",
+    "vizuara-layout",
+    "vizuara-interactivity",
+    "examples-package",
+]
+resolver = "2"
+
+[workspace.dependencies]
+# 核心依赖
+wgpu = "0.19"
+winit = "0.29"
+bytemuck = "1.14"
+nalgebra = "0.32"
+
+# 数据处理
+ndarray = "0.15"
+polars = "0.36"
+
+# 异步和并发
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
+
+# 错误处理
+anyhow = "1.0"
+thiserror = "1.0"
+
+# 序列化
+serde = { version = "1.0", features = ["derive"] }
+
+# 开发工具
+criterion = "0.5"
+
+[profile.dev]
+opt-level = 1
+debug = true
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[profile.bench]
+opt-level = 3
+debug = true

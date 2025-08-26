@@ -1,0 +1,12 @@
+[package]
+name = "vizuara-examples"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "basic_triangle"
+path = "src/basic_triangle.rs"
+
+[dependencies]
+vizuara-window = { path = "../vizuara-window" }
+tokio = { workspace = true }

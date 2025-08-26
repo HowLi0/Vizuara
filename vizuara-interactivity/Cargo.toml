@@ -1,0 +1,10 @@
+[package]
+name = "vizuara-interactivity"
+version = "0.1.0"
+edition = "2021"
+description = "Vizuara module: vizuara-interactivity"
+authors = ["Vizuara Contributors"]
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+vizuara-core = { path = "../vizuara-core" }
