@@ -7,6 +7,21 @@ edition = "2021"
 name = "basic_triangle"
 path = "src/basic_triangle.rs"
 
+[[bin]]
+name = "phase1_demo"
+path = "src/phase1_demo.rs"
+
+[[bin]]
+name = "visual_demo"
+path = "src/visual_demo.rs"
+
+[[bin]]
+name = "line_demo"
+path = "src/line_demo.rs"
+
 [dependencies]
 vizuara-window = { path = "../vizuara-window" }
+vizuara-core = { path = "../vizuara-core" }
+vizuara-plots = { path = "../vizuara-plots" }
+vizuara-scene = { path = "../vizuara-scene" }
 tokio = { workspace = true }

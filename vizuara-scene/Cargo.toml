@@ -8,3 +8,6 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 vizuara-core = { path = "../vizuara-core" }
+vizuara-components = { path = "../vizuara-components" }
+vizuara-plots = { path = "../vizuara-plots" }
+nalgebra = { workspace = true }
