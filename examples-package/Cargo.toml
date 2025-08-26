@@ -27,9 +27,16 @@ path = "src/bar_demo.rs"
 name = "dashboard_demo"
 path = "src/dashboard_demo.rs"
 
+[[bin]]
+name = "interactive_demo"
+path = "src/interactive_demo.rs"
+
 [dependencies]
-vizuara-window = { path = "../vizuara-window" }
 vizuara-core = { path = "../vizuara-core" }
 vizuara-plots = { path = "../vizuara-plots" }
 vizuara-scene = { path = "../vizuara-scene" }
-tokio = { workspace = true }
+vizuara-window = { path = "../vizuara-window" }
+vizuara-interactivity = { path = "../vizuara-interactivity" }
+winit = { workspace = true }
+nalgebra = { workspace = true }
+tokio ={workspace=true}

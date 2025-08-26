@@ -20,6 +20,21 @@ pub enum VizuaraError {
     
     #[error("Unsupported feature: {0}")]
     UnsupportedFeature(String),
+    
+    #[error("Interactive error: {0}")]
+    InteractiveError(String),
+}
+
+impl From<String> for VizuaraError {
+    fn from(msg: String) -> Self {
+        VizuaraError::InteractiveError(msg)
+    }
+}
+
+impl From<&str> for VizuaraError {
+    fn from(msg: &str) -> Self {
+        VizuaraError::InteractiveError(msg.to_string())
+    }
 }
 
 /// 结果类型的便捷别名

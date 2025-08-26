@@ -1,6 +1,20 @@
 use nalgebra::{Point2, Point3, Matrix3, Matrix4};
 use serde::{Deserialize, Serialize};
 
+/// 逻辑屏幕坐标位置
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct LogicalPosition {
+    pub x: f64,
+    pub y: f64,
+}
+
+/// 世界坐标位置（数据坐标）
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct WorldPosition {
+    pub x: f64,
+    pub y: f64,
+}
+
 /// 坐标系统抽象
 pub trait CoordinateSystem {
     /// 将数据坐标转换为屏幕坐标

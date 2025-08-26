@@ -1935,18 +1935,24 @@ dependencies = [
 name = "vizuara-examples"
 version = "0.1.0"
 dependencies = [
+ "nalgebra",
  "tokio",
  "vizuara-core",
+ "vizuara-interactivity",
  "vizuara-plots",
  "vizuara-scene",
  "vizuara-window",
+ "winit",
 ]
 
 [[package]]
 name = "vizuara-interactivity"
 version = "0.1.0"
 dependencies = [
+ "nalgebra",
+ "serde",
  "vizuara-core",
+ "winit",
 ]
 
 [[package]]
