@@ -108,7 +108,7 @@ impl WgpuRenderer {
 
             let alpha_mode = surface_caps
                 .alpha_modes
-                .get(0)
+                .first()
                 .copied()
                 .unwrap_or(wgpu::CompositeAlphaMode::Auto);
 
@@ -371,12 +371,12 @@ impl WgpuRenderer {
     }
 
     /// 绘制文本：使用 glyphon
-    fn draw_texts(&mut self, encoder: &mut wgpu::CommandEncoder, view: &wgpu::TextureView, texts: &mut Vec<(String, f32, f32, f32, Color, HorizontalAlign, VerticalAlign)>) -> Result<()> {
+    fn draw_texts(&mut self, encoder: &mut wgpu::CommandEncoder, view: &wgpu::TextureView, texts: &mut [(String, f32, f32, f32, Color, HorizontalAlign, VerticalAlign)]) -> Result<()> {
         if texts.is_empty() { return Ok(()); }
 
         // 第一阶段：确保缓存存在（只做插入，不持有引用，避免与后续不可变借用冲突）
-        let mut keys: Vec<(String, u32, u8, u8)> = Vec::with_capacity(texts.len());
-        for (content, _x, _y, size, _color, h, v) in texts.iter() {
+    let mut keys: Vec<(String, u32, u8, u8)> = Vec::with_capacity(texts.len());
+    for (content, _x, _y, size, _color, h, v) in texts.iter() {
             let h_code = match h { HorizontalAlign::Left => 0u8, HorizontalAlign::Center => 1u8, HorizontalAlign::Right => 2u8 };
             let v_code = match v { VerticalAlign::Top => 0u8, VerticalAlign::Middle => 1u8, VerticalAlign::Baseline => 2u8, VerticalAlign::Bottom => 3u8 };
             let key = (content.clone(), (*size as u32), h_code, v_code);
@@ -397,7 +397,7 @@ impl WgpuRenderer {
             let buf = self.text_cache.get(key).expect("text buffer must exist after first pass");
             // 简单锚点偏移：按字号估算 em 高度，左中右/上中下
             let em = *size; // 以 size 作为高度估计
-            let avg_w = if content.chars().any(|c| !c.is_ascii()) { *size * 0.9 } else { *size * 0.6 };
+            let avg_w = if !content.is_ascii() { *size * 0.9 } else { *size * 0.6 };
             let width_est = content.chars().count() as f32 * avg_w;
             let mut left = *x;
             let mut top = *y;
@@ -664,25 +664,25 @@ impl WgpuRenderer {
                         // 左
                         vertices.extend(self.primitives_to_vertices_collect_text(
                             &[Primitive::Line { start: nalgebra::Point2::new(x0, y0), end: nalgebra::Point2::new(x0, y1) }],
-                            &[style_line.clone()],
+                            std::slice::from_ref(&style_line),
                             &mut dummy_texts,
                         ));
                         // 右
                         vertices.extend(self.primitives_to_vertices_collect_text(
                             &[Primitive::Line { start: nalgebra::Point2::new(x1, y0), end: nalgebra::Point2::new(x1, y1) }],
-                            &[style_line.clone()],
+                            std::slice::from_ref(&style_line),
                             &mut dummy_texts,
                         ));
                         // 上
                         vertices.extend(self.primitives_to_vertices_collect_text(
                             &[Primitive::Line { start: nalgebra::Point2::new(x0, y0), end: nalgebra::Point2::new(x1, y0) }],
-                            &[style_line.clone()],
+                            std::slice::from_ref(&style_line),
                             &mut dummy_texts,
                         ));
                         // 下
                         vertices.extend(self.primitives_to_vertices_collect_text(
                             &[Primitive::Line { start: nalgebra::Point2::new(x0, y1), end: nalgebra::Point2::new(x1, y1) }],
-                            &[style_line],
+                            std::slice::from_ref(&style_line),
                             &mut dummy_texts,
                         ));
                     }

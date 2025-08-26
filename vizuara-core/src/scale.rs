@@ -134,7 +134,7 @@ impl Scale for LogScale {
     
     fn tick_labels(&self, ticks: &[f32]) -> Vec<String> {
         ticks.iter().map(|&tick| {
-            if tick >= 1000.0 || tick < 0.01 {
+            if !(0.01..1000.0).contains(&tick) {
                 format!("{:.1e}", tick)
             } else {
                 format!("{:.2}", tick)

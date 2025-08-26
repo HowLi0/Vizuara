@@ -2,7 +2,6 @@
 //! 
 //! 这是 Vizuara 的第一个示例，验证基础渲染功能
 
-use tokio;
 use vizuara_window::VizuaraWindow;
 
 #[tokio::main]

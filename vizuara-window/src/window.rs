@@ -38,7 +38,7 @@ impl VizuaraWindow {
         
         // 初始化渲染器和表面
         let size = window.inner_size();
-        let (mut renderer, surface) = WgpuRenderer::new(&*window, size).await?;
+    let (mut renderer, surface) = WgpuRenderer::new(&window, size).await?;
         
         println!("✅ 渲染器初始化成功");
         

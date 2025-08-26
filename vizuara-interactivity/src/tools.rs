@@ -234,7 +234,7 @@ impl InteractiveTool for ZoomTool {
             }
             
             SimpleMouseEvent::ButtonPress { button, position } 
-                if self.button.map_or(false, |b| b == *button) => {
+                if self.button == Some(*button) => {
                 viewport.zoom_at_point(self.click_zoom_factor, *position)?;
                 Ok(true)
             }

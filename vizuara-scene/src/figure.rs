@@ -20,10 +20,7 @@ impl Figure {
         }
     }
 
-    /// 创建默认大小的图形对象
-    pub fn default() -> Self {
-        Self::new(800.0, 600.0)
-    }
+    // 删除与 Default trait 混淆的同名方法，改为实现标准 Default
 
     /// 设置标题
     pub fn title<S: Into<String>>(mut self, title: S) -> Self {
@@ -78,6 +75,12 @@ impl Figure {
     /// 获取场景数量
     pub fn scene_count(&self) -> usize {
         self.scenes.len()
+    }
+}
+
+impl Default for Figure {
+    fn default() -> Self {
+        Self::new(800.0, 600.0)
     }
 }
 

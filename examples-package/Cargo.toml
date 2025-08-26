@@ -37,6 +37,7 @@ vizuara-plots = { path = "../vizuara-plots" }
 vizuara-scene = { path = "../vizuara-scene" }
 vizuara-window = { path = "../vizuara-window" }
 vizuara-interactivity = { path = "../vizuara-interactivity" }
+vizuara-wgpu = { path = "../vizuara-wgpu" }
 winit = { workspace = true }
 nalgebra = { workspace = true }
 tokio ={workspace=true}
