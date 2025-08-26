@@ -47,6 +47,9 @@ impl Figure {
                 position: nalgebra::Point2::new(self.width / 2.0, 30.0),
                 content: title.clone(),
                 size: 20.0,
+                color: vizuara_core::Color::rgb(0.1, 0.1, 0.1),
+                h_align: vizuara_core::HorizontalAlign::Center,
+                v_align: vizuara_core::VerticalAlign::Bottom,
             });
         }
 

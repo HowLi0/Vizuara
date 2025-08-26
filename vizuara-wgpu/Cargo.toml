@@ -13,3 +13,4 @@ winit = { workspace = true }
 nalgebra = { workspace = true }
 bytemuck = { workspace = true, features = ["derive"] }
 anyhow = { workspace = true }
+glyphon = "0.5"

@@ -108,6 +108,9 @@ impl Axis {
                 position: label_position,
                 content: label_text,
                 size: self.style.label_size,
+                color: self.style.label_color,
+                h_align: match self.direction { AxisDirection::Horizontal => vizuara_core::HorizontalAlign::Center, AxisDirection::Vertical => vizuara_core::HorizontalAlign::Right },
+                v_align: match self.direction { AxisDirection::Horizontal => vizuara_core::VerticalAlign::Top, AxisDirection::Vertical => vizuara_core::VerticalAlign::Middle },
             });
         }
 
@@ -118,6 +121,9 @@ impl Axis {
                 position: title_position,
                 content: title.clone(),
                 size: self.style.title_size,
+                color: self.style.label_color,
+                h_align: match self.direction { AxisDirection::Horizontal => vizuara_core::HorizontalAlign::Center, AxisDirection::Vertical => vizuara_core::HorizontalAlign::Right },
+                v_align: match self.direction { AxisDirection::Horizontal => vizuara_core::VerticalAlign::Top, AxisDirection::Vertical => vizuara_core::VerticalAlign::Middle },
             });
         }
 

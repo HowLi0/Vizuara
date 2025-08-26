@@ -1,8 +1,10 @@
 use wgpu::util::DeviceExt;
 use winit::window::Window;
-use vizuara_core::{Color, Primitive, Style, Result, VizuaraError};
+use vizuara_core::{Color, Primitive, Style, Result, VizuaraError, HorizontalAlign, VerticalAlign};
 use bytemuck::{Pod, Zeroable};
 //use nalgebra::Point2;
+use glyphon::{FontSystem, SwashCache, TextAtlas, TextRenderer, Buffer, Attrs, Metrics, Family, Resolution, TextArea, TextBounds, Shaping, Wrap};
+use std::collections::HashMap;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
@@ -26,6 +28,13 @@ pub struct WgpuRenderer {
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
+    // 文本渲染
+    font_system: FontSystem,
+    swash_cache: SwashCache,
+    text_atlas: TextAtlas,
+    text_renderer: TextRenderer,
+    // 文本缓存：key=(content,size,h_align,v_align)，值=(Buffer, color)
+    text_cache: HashMap<(String, u32, u8, u8), Buffer>,
 }
 
 impl WgpuRenderer {
@@ -139,6 +148,31 @@ impl WgpuRenderer {
             // 创建渲染管线
             let render_pipeline = Self::create_render_pipeline(&device, &config)?;
 
+            // 初始化文本渲染
+            let mut font_system = FontSystem::new();
+            // 尝试加载常见字体（增强中英文显示一致性），失败则忽略
+            {
+                let db = font_system.db_mut();
+                let font_candidates = [
+                    "/usr/share/fonts/truetype/noto/NotoSansSC-Regular.ttf",
+                    "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+                    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+                    "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                ];
+                for path in font_candidates {
+                    let _ = db.load_font_file(path);
+                }
+            }
+            let swash_cache = SwashCache::new();
+            let mut text_atlas = TextAtlas::new(&device, &queue, config.format);
+            let text_renderer = TextRenderer::new(
+                &mut text_atlas,
+                &device,
+                wgpu::MultisampleState { count: 1, mask: !0, alpha_to_coverage_enabled: false },
+                None,
+            );
+
             let renderer = WgpuRenderer {
                 _instance: instance,
                 _adapter: adapter,
@@ -147,6 +181,11 @@ impl WgpuRenderer {
                 config,
                 size,
                 render_pipeline,
+                font_system,
+                swash_cache,
+                text_atlas,
+                text_renderer,
+                text_cache: HashMap::new(),
             };
 
             return Ok((renderer, surface));
@@ -174,7 +213,7 @@ impl WgpuRenderer {
             push_constant_ranges: &[],
         });
 
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
@@ -210,7 +249,8 @@ impl WgpuRenderer {
                 topology: wgpu::PrimitiveTopology::TriangleList,
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
+                // 关闭背面剔除，避免不同图元缠绕方向不一致导致的消隐
+                cull_mode: None,
                 polygon_mode: wgpu::PolygonMode::Fill,
                 unclipped_depth: false,
                 conservative: false,
@@ -234,6 +274,8 @@ impl WgpuRenderer {
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             surface.configure(&self.device, &self.config);
+            // 缓存与视口相关，尺寸改变后清空缓存以重建
+            self.text_cache.clear();
         }
     }
 
@@ -260,8 +302,9 @@ impl WgpuRenderer {
             label: Some("Render Encoder"),
         });
 
-        // 转换图元为顶点
-        let vertices = self.primitives_to_vertices(primitives, styles);
+        // 转换图元为顶点，同时收集文本
+    let mut texts: Vec<(String, f32, f32, f32, Color, HorizontalAlign, VerticalAlign)> = Vec::new();
+        let vertices = self.primitives_to_vertices_collect_text(primitives, styles, &mut texts);
         
         if !vertices.is_empty() {
             let vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -295,6 +338,9 @@ impl WgpuRenderer {
                 render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
                 render_pass.draw(0..vertices.len() as u32, 0..1);
             }
+
+            // 文本绘制 pass
+            self.draw_texts(&mut encoder, &view, &mut texts)?;
         } else {
             // 即使没有顶点也要清屏
             let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -324,8 +370,96 @@ impl WgpuRenderer {
         Ok(())
     }
 
-    /// 将图元转换为顶点数据
-    fn primitives_to_vertices(&self, primitives: &[Primitive], styles: &[Style]) -> Vec<Vertex> {
+    /// 绘制文本：使用 glyphon
+    fn draw_texts(&mut self, encoder: &mut wgpu::CommandEncoder, view: &wgpu::TextureView, texts: &mut Vec<(String, f32, f32, f32, Color, HorizontalAlign, VerticalAlign)>) -> Result<()> {
+        if texts.is_empty() { return Ok(()); }
+
+        // 第一阶段：确保缓存存在（只做插入，不持有引用，避免与后续不可变借用冲突）
+        let mut keys: Vec<(String, u32, u8, u8)> = Vec::with_capacity(texts.len());
+        for (content, _x, _y, size, _color, h, v) in texts.iter() {
+            let h_code = match h { HorizontalAlign::Left => 0u8, HorizontalAlign::Center => 1u8, HorizontalAlign::Right => 2u8 };
+            let v_code = match v { VerticalAlign::Top => 0u8, VerticalAlign::Middle => 1u8, VerticalAlign::Baseline => 2u8, VerticalAlign::Bottom => 3u8 };
+            let key = (content.clone(), (*size as u32), h_code, v_code);
+            if !self.text_cache.contains_key(&key) {
+                let mut buf = Buffer::new(&mut self.font_system, Metrics::new(*size, *size));
+                buf.set_size(&mut self.font_system, self.size.width as f32, self.size.height as f32);
+                buf.set_text(&mut self.font_system, content, Attrs::new().family(Family::SansSerif), Shaping::Advanced);
+                buf.set_wrap(&mut self.font_system, Wrap::None);
+                self.text_cache.insert(key.clone(), buf);
+            }
+            keys.push(key);
+        }
+
+        // 构造文本区域
+        let to_u8 = |v: f32| -> u8 { (v.clamp(0.0, 1.0) * 255.0).round() as u8 };
+        let mut areas: Vec<TextArea> = Vec::new();
+        for ((content, x, y, size, color, h, v), key) in texts.iter().zip(keys.iter()) {
+            let buf = self.text_cache.get(key).expect("text buffer must exist after first pass");
+            // 简单锚点偏移：按字号估算 em 高度，左中右/上中下
+            let em = *size; // 以 size 作为高度估计
+            let avg_w = if content.chars().any(|c| !c.is_ascii()) { *size * 0.9 } else { *size * 0.6 };
+            let width_est = content.chars().count() as f32 * avg_w;
+            let mut left = *x;
+            let mut top = *y;
+            // 水平
+            match h {
+                HorizontalAlign::Left => {}
+                HorizontalAlign::Center => { left -= width_est / 2.0; }
+                HorizontalAlign::Right => { left -= width_est; }
+            }
+            // 垂直（top 为文本行框的上边）
+            match v {
+                VerticalAlign::Top => {}
+                VerticalAlign::Middle => { top -= em / 2.0; }
+                VerticalAlign::Baseline => { top -= em * 0.8; }
+                VerticalAlign::Bottom => { top -= em; }
+            }
+            areas.push(TextArea {
+                buffer: buf,
+                left,
+                top,
+                scale: 1.0,
+                bounds: TextBounds { left: 0, top: 0, right: self.config.width as i32, bottom: self.config.height as i32 },
+                default_color: glyphon::Color::rgba(to_u8(color.r), to_u8(color.g), to_u8(color.b), to_u8(color.a)),
+            });
+        }
+
+        // 准备文本
+        if let Err(e) = self.text_renderer.prepare(
+            &self.device,
+            &self.queue,
+            &mut self.font_system,
+            &mut self.text_atlas,
+            Resolution { width: self.config.width, height: self.config.height },
+            areas,
+            &mut self.swash_cache,
+        ) { return Err(VizuaraError::RenderError(format!("Text prepare failed: {}", e))); }
+
+        // 开启一个加载现有颜色的 pass，以便在图形上方绘制文字
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Text Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                occlusion_query_set: None,
+                timestamp_writes: None,
+            });
+            if let Err(e) = self.text_renderer.render(&self.text_atlas, &mut render_pass) {
+                return Err(VizuaraError::RenderError(format!("Text render failed: {}", e)));
+            }
+        }
+        Ok(())
+    }
+
+    /// 将图元转换为顶点数据，同时收集文本
+    fn primitives_to_vertices_collect_text(&self, primitives: &[Primitive], styles: &[Style], texts: &mut Vec<(String, f32, f32, f32, Color, HorizontalAlign, VerticalAlign)>) -> Vec<Vertex> {
         let mut vertices = Vec::new();
         
         for (i, primitive) in primitives.iter().enumerate() {
@@ -458,10 +592,107 @@ impl WgpuRenderer {
                         ]);
                     }
                 }
-                // 其他图元类型的实现...
-                _ => {
-                    // 暂时跳过未实现的图元类型
+                Primitive::Rectangle { min, max } => {
+                    // 使用填充颜色渲染矩形（两个三角形）
+                    let color = style.fill_color.unwrap_or(Color::WHITE);
+                    let color_array = [color.r, color.g, color.b, color.a * style.opacity];
+
+                    // 四个角（像素坐标）映射为 NDC
+                    let to_ndc = |(x, y): (f32, f32)| -> [f32; 2] {
+                        let xn = (x / self.size.width as f32) * 2.0 - 1.0;
+                        let yn = 1.0 - (y / self.size.height as f32) * 2.0;
+                        [xn, yn]
+                    };
+
+                    let x0 = min.x.min(max.x);
+                    let y0 = min.y.min(max.y);
+                    let x1 = max.x.max(min.x);
+                    let y1 = max.y.max(min.y);
+
+                    let tl = to_ndc((x0, y0)); // top-left
+                    let tr = to_ndc((x1, y0)); // top-right
+                    let bl = to_ndc((x0, y1)); // bottom-left
+                    let br = to_ndc((x1, y1)); // bottom-right
+
+                    // 两个三角形填充矩形（在关闭 cull 的情况下，无需严格关心缠绕方向）
+                    vertices.extend_from_slice(&[
+                        // 三角形 1: tl, bl, br
+                        Vertex::new(tl, color_array),
+                        Vertex::new(bl, color_array),
+                        Vertex::new(br, color_array),
+                        // 三角形 2: tl, br, tr
+                        Vertex::new(tl, color_array),
+                        Vertex::new(br, color_array),
+                        Vertex::new(tr, color_array),
+                    ]);
+
+                    // 如果需要描边，可在此追加四条边为细线，但当前仅填充
                 }
+                Primitive::RectangleStyled { min, max, fill, stroke } => {
+                    // 填充
+                    let color_array = [fill.r, fill.g, fill.b, fill.a * style.opacity];
+
+                    let to_ndc = |(x, y): (f32, f32)| -> [f32; 2] {
+                        let xn = (x / self.size.width as f32) * 2.0 - 1.0;
+                        let yn = 1.0 - (y / self.size.height as f32) * 2.0;
+                        [xn, yn]
+                    };
+
+                    let x0 = min.x.min(max.x);
+                    let y0 = min.y.min(max.y);
+                    let x1 = max.x.max(min.x);
+                    let y1 = max.y.max(min.y);
+
+                    let tl = to_ndc((x0, y0));
+                    let tr = to_ndc((x1, y0));
+                    let bl = to_ndc((x0, y1));
+                    let br = to_ndc((x1, y1));
+
+                    vertices.extend_from_slice(&[
+                        Vertex::new(tl, color_array),
+                        Vertex::new(bl, color_array),
+                        Vertex::new(br, color_array),
+                        Vertex::new(tl, color_array),
+                        Vertex::new(br, color_array),
+                        Vertex::new(tr, color_array),
+                    ]);
+
+                    // 描边（如果有）
+                    if let Some((stroke_color, stroke_w)) = stroke {
+                        let style_line = Style::new().stroke(*stroke_color, *stroke_w);
+                        let mut dummy_texts: Vec<(String, f32, f32, f32, Color, HorizontalAlign, VerticalAlign)> = Vec::new();
+                        // 左
+                        vertices.extend(self.primitives_to_vertices_collect_text(
+                            &[Primitive::Line { start: nalgebra::Point2::new(x0, y0), end: nalgebra::Point2::new(x0, y1) }],
+                            &[style_line.clone()],
+                            &mut dummy_texts,
+                        ));
+                        // 右
+                        vertices.extend(self.primitives_to_vertices_collect_text(
+                            &[Primitive::Line { start: nalgebra::Point2::new(x1, y0), end: nalgebra::Point2::new(x1, y1) }],
+                            &[style_line.clone()],
+                            &mut dummy_texts,
+                        ));
+                        // 上
+                        vertices.extend(self.primitives_to_vertices_collect_text(
+                            &[Primitive::Line { start: nalgebra::Point2::new(x0, y0), end: nalgebra::Point2::new(x1, y0) }],
+                            &[style_line.clone()],
+                            &mut dummy_texts,
+                        ));
+                        // 下
+                        vertices.extend(self.primitives_to_vertices_collect_text(
+                            &[Primitive::Line { start: nalgebra::Point2::new(x0, y1), end: nalgebra::Point2::new(x1, y1) }],
+                            &[style_line],
+                            &mut dummy_texts,
+                        ));
+                    }
+                }
+                Primitive::Text { position, content, size, color, h_align, v_align } => {
+                    // 收集文本，实际绘制在 glyphon pass 中（克隆内容以延长生命周期）
+                    texts.push((content.clone(), position.x, position.y, *size, *color, *h_align, *v_align));
+                }
+                // 其他图元类型暂不渲染（如 Text/Circle 等）
+                _ => {}
             }
         }
         

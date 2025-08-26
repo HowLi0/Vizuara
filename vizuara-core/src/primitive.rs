@@ -1,5 +1,14 @@
 use serde::{Deserialize, Serialize};
 use nalgebra::{Point2, Point3};
+use crate::Color;
+
+/// 水平对齐
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum HorizontalAlign { Left, Center, Right }
+
+/// 垂直对齐
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum VerticalAlign { Top, Middle, Baseline, Bottom }
 
 /// 渲染图元的基础枚举
 /// 这些是渲染器能够处理的基本几何元素
@@ -18,16 +27,26 @@ pub enum Primitive {
         min: Point2<f32>,
         max: Point2<f32>,
     },
+    /// 带样式的矩形（包含填充与可选描边）
+    RectangleStyled {
+        min: Point2<f32>,
+        max: Point2<f32>,
+        fill: Color,
+        stroke: Option<(Color, f32)>,
+    },
     /// 圆形
     Circle {
         center: Point2<f32>,
         radius: f32,
     },
-    /// 文本
+    /// 文本（带颜色与对齐）
     Text {
         position: Point2<f32>,
         content: String,
         size: f32,
+        color: Color,
+        h_align: HorizontalAlign,
+        v_align: VerticalAlign,
     },
     /// 三角形列表（用于复杂几何）
     TriangleList(Vec<Point2<f32>>),
@@ -86,6 +105,7 @@ impl Primitive {
                 Some((Point2::new(min_x, min_y), Point2::new(max_x, max_y)))
             }
             Primitive::Rectangle { min, max } => Some((*min, *max)),
+            Primitive::RectangleStyled { min, max, .. } => Some((*min, *max)),
             Primitive::Circle { center, radius } => {
                 let min = Point2::new(center.x - radius, center.y - radius);
                 let max = Point2::new(center.x + radius, center.y + radius);

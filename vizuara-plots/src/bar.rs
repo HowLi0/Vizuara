@@ -176,10 +176,12 @@ impl BarPlot {
             // 柱子顶部的 Y 坐标
             let bar_top_y = plot_area.y + plot_area.height - bar_height;
             
-            // 创建柱子矩形
-            primitives.push(Primitive::Rectangle {
+            // 创建柱子矩形（带样式）
+            primitives.push(Primitive::RectangleStyled {
                 min: Point2::new(x, bar_top_y.min(baseline_y)),
                 max: Point2::new(x + bar_width, bar_top_y.max(baseline_y)),
+                fill: self.style.fill_color,
+                stroke: Some((self.style.stroke_color, self.style.stroke_width)),
             });
 
             // 添加数值标签（在柱子顶部）
@@ -193,6 +195,9 @@ impl BarPlot {
                 position: Point2::new(x + bar_width / 2.0, label_y),
                 content: format!("{:.1}", bar_data.value),
                 size: 10.0,
+                color: Color::rgb(0.1, 0.1, 0.1),
+                h_align: vizuara_core::HorizontalAlign::Center,
+                v_align: if bar_data.value >= 0.0 { vizuara_core::VerticalAlign::Bottom } else { vizuara_core::VerticalAlign::Top },
             });
 
             // 添加类别标签（在 X 轴下方）
@@ -200,6 +205,9 @@ impl BarPlot {
                 position: Point2::new(x + bar_width / 2.0, plot_area.y + plot_area.height + 20.0),
                 content: bar_data.category.clone(),
                 size: 10.0,
+                color: Color::rgb(0.1, 0.1, 0.1),
+                h_align: vizuara_core::HorizontalAlign::Center,
+                v_align: vizuara_core::VerticalAlign::Top,
             });
         }
 
