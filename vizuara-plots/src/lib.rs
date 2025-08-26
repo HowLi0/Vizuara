@@ -4,6 +4,8 @@
 
 pub mod scatter;
 pub mod line;
+pub mod bar;
 
 pub use scatter::*;
 pub use line::*;
+pub use bar::*;

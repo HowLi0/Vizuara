@@ -19,6 +19,14 @@ path = "src/visual_demo.rs"
 name = "line_demo"
 path = "src/line_demo.rs"
 
+[[bin]]
+name = "bar_demo"
+path = "src/bar_demo.rs"
+
+[[bin]]
+name = "dashboard_demo"
+path = "src/dashboard_demo.rs"
+
 [dependencies]
 vizuara-window = { path = "../vizuara-window" }
 vizuara-core = { path = "../vizuara-core" }
