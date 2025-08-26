@@ -328,7 +328,9 @@ impl WgpuRenderer {
     fn primitives_to_vertices(&self, primitives: &[Primitive], styles: &[Style]) -> Vec<Vertex> {
         let mut vertices = Vec::new();
         
-        for (primitive, style) in primitives.iter().zip(styles.iter()) {
+        for (i, primitive) in primitives.iter().enumerate() {
+            // 当样式数量少于图元数量时，使用默认样式兜底，避免丢弃后续图元
+            let style = styles.get(i).cloned().unwrap_or_else(Style::default);
             match primitive {
                 Primitive::Point(point) => {
                     // 将点渲染为小三角形
@@ -359,6 +361,100 @@ impl WgpuRenderer {
                             Vertex::new([x, y + size], color_array),
                             Vertex::new([x - size, y - size], color_array),
                             Vertex::new([x + size, y - size], color_array),
+                        ]);
+                    }
+                }
+                Primitive::Line { start, end } => {
+                    // 使用描边颜色，回退到填充色
+                    let color = style
+                        .stroke_color
+                        .or(style.fill_color)
+                        .unwrap_or(Color::WHITE);
+                    let color_array = [color.r, color.g, color.b, color.a * style.opacity];
+
+                    // 线宽（像素）转换为偏移（像素）
+                    let half_w = (style.stroke_width.max(1.0)) / 2.0;
+
+                    // 计算法线偏移（像素空间）
+                    let dx = end.x - start.x;
+                    let dy = end.y - start.y;
+                    let len = (dx * dx + dy * dy).sqrt().max(1e-6);
+                    let nx = -dy / len;
+                    let ny = dx / len;
+                    let ox = nx * half_w;
+                    let oy = ny * half_w;
+
+                    // 四个角（像素空间）
+                    let p0 = (start.x + ox, start.y + oy);
+                    let p1 = (end.x + ox, end.y + oy);
+                    let p2 = (end.x - ox, end.y - oy);
+                    let p3 = (start.x - ox, start.y - oy);
+
+                    // 像素转 NDC
+                    let to_ndc = |(x, y): (f32, f32)| -> [f32; 2] {
+                        let xn = (x / self.size.width as f32) * 2.0 - 1.0;
+                        let yn = 1.0 - (y / self.size.height as f32) * 2.0;
+                        [xn, yn]
+                    };
+
+                    let v0 = to_ndc(p0);
+                    let v1 = to_ndc(p1);
+                    let v2 = to_ndc(p2);
+                    let v3 = to_ndc(p3);
+
+                    // 两个三角形
+                    vertices.extend_from_slice(&[
+                        Vertex::new(v0, color_array),
+                        Vertex::new(v1, color_array),
+                        Vertex::new(v2, color_array),
+                        Vertex::new(v0, color_array),
+                        Vertex::new(v2, color_array),
+                        Vertex::new(v3, color_array),
+                    ]);
+                }
+                Primitive::LineStrip(points) => {
+                    if points.len() < 2 { continue; }
+                    let color = style
+                        .stroke_color
+                        .or(style.fill_color)
+                        .unwrap_or(Color::WHITE);
+                    let color_array = [color.r, color.g, color.b, color.a * style.opacity];
+                    let half_w = (style.stroke_width.max(1.0)) / 2.0;
+
+                    let to_ndc = |(x, y): (f32, f32)| -> [f32; 2] {
+                        let xn = (x / self.size.width as f32) * 2.0 - 1.0;
+                        let yn = 1.0 - (y / self.size.height as f32) * 2.0;
+                        [xn, yn]
+                    };
+
+                    for seg in points.windows(2) {
+                        let a = seg[0];
+                        let b = seg[1];
+                        let dx = b.x - a.x;
+                        let dy = b.y - a.y;
+                        let len = (dx * dx + dy * dy).sqrt().max(1e-6);
+                        let nx = -dy / len;
+                        let ny = dx / len;
+                        let ox = nx * half_w;
+                        let oy = ny * half_w;
+
+                        let p0 = (a.x + ox, a.y + oy);
+                        let p1 = (b.x + ox, b.y + oy);
+                        let p2 = (b.x - ox, b.y - oy);
+                        let p3 = (a.x - ox, a.y - oy);
+
+                        let v0 = to_ndc(p0);
+                        let v1 = to_ndc(p1);
+                        let v2 = to_ndc(p2);
+                        let v3 = to_ndc(p3);
+
+                        vertices.extend_from_slice(&[
+                            Vertex::new(v0, color_array),
+                            Vertex::new(v1, color_array),
+                            Vertex::new(v2, color_array),
+                            Vertex::new(v0, color_array),
+                            Vertex::new(v2, color_array),
+                            Vertex::new(v3, color_array),
                         ]);
                     }
                 }

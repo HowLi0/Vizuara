@@ -60,7 +60,8 @@ impl FigureWindow {
         let styles = vec![
             Style::new()
                 .fill_color(vizuara_core::Color::rgb(0.2, 0.4, 0.8))
-                .stroke(vizuara_core::Color::rgb(0.1, 0.1, 0.1), 1.0)
+                .stroke(vizuara_core::Color::rgb(0.9, 0.2, 0.2), 2.0)
+                .marker(vizuara_core::MarkerStyle::Circle, 6.0)
         ];
         
         let window_id = window.id();
