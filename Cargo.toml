@@ -9,6 +9,8 @@ members = [
     "vizuara-window",
     "vizuara-interactivity",
     "vizuara-animation",
+    "vizuara-3d",
+    "vizuara-themes",
     "examples-package",
 ]
 resolver = "2"
@@ -34,6 +36,7 @@ thiserror = "1.0"
 
 # 序列化
 serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
 
 # 开发工具
 criterion = "0.5"

@@ -39,6 +39,30 @@
 			"type": "shell",
 			"command": "cargo run -p vizuara-examples --bin animation_demo",
 			"group": "build"
+		},
+		{
+			"label": "cargo-run-animated-visual-demo",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin animated_visual_demo",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-theme-demo",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin theme_demo",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-theme-visual-demo",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin theme_visual_demo",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-theme-visual-demo",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin theme_visual_demo",
+			"group": "build"
 		}
 	]
 }

@@ -48,16 +48,24 @@ name = "demo_3d"
 path = "src/demo_3d.rs"
 
 [[bin]]
-name = "animation_demo"
-path = "src/animation_demo.rs"
-
-[[bin]]
 name = "real_3d_demo"
 path = "src/real_3d_demo.rs"
 
 [[bin]]
 name = "lighting_3d_demo"
 path = "src/lighting_3d_demo.rs"
+
+[[bin]]
+name = "animated_visual_demo"
+path = "src/animated_visual_demo.rs"
+
+[[bin]]
+name = "theme_demo"
+path = "src/theme_demo.rs"
+
+[[bin]]
+name = "theme_visual_demo"
+path = "src/theme_visual_demo.rs"
 
 [dependencies]
 vizuara-core = { path = "../vizuara-core" }
@@ -69,6 +77,8 @@ vizuara-interactivity = { path = "../vizuara-interactivity" }
 vizuara-wgpu = { path = "../vizuara-wgpu" }
 vizuara-3d = { path = "../vizuara-3d" }
 vizuara-animation = { path = "../vizuara-animation" }
+vizuara-themes = { path = "../vizuara-themes" }
 winit = { workspace = true }
 nalgebra = { workspace = true }
 tokio ={workspace=true}
+pollster = "0.3"
