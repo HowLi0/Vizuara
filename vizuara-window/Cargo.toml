@@ -10,6 +10,7 @@ license = "MIT OR Apache-2.0"
 vizuara-core = { path = "../vizuara-core" }
 vizuara-wgpu = { path = "../vizuara-wgpu" }
 vizuara-scene = { path = "../vizuara-scene" }
+vizuara-3d = { path = "../vizuara-3d" }
 winit = { workspace = true }
 wgpu = { workspace = true }
 nalgebra = { workspace = true }

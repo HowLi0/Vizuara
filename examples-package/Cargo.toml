@@ -8,20 +8,16 @@ name = "basic_triangle"
 path = "src/basic_triangle.rs"
 
 [[bin]]
-name = "phase1_demo"
-path = "src/phase1_demo.rs"
-
-[[bin]]
-name = "visual_demo"
-path = "src/visual_demo.rs"
-
-[[bin]]
 name = "line_demo"
 path = "src/line_demo.rs"
 
 [[bin]]
 name = "bar_demo"
 path = "src/bar_demo.rs"
+
+[[bin]]
+name = "visual_demo"
+path = "src/visual_demo.rs"
 
 [[bin]]
 name = "dashboard_demo"
@@ -31,13 +27,48 @@ path = "src/dashboard_demo.rs"
 name = "interactive_demo"
 path = "src/interactive_demo.rs"
 
+[[bin]]
+name = "phase1_demo"
+path = "src/phase1_demo.rs"
+
+[[bin]]
+name = "histogram_demo"
+path = "src/histogram_demo.rs"
+
+[[bin]]
+name = "heatmap_demo"
+path = "src/heatmap_demo.rs"
+
+[[bin]]
+name = "boxplot_demo"
+path = "src/boxplot_demo.rs"
+
+[[bin]]
+name = "demo_3d"
+path = "src/demo_3d.rs"
+
+[[bin]]
+name = "animation_demo"
+path = "src/animation_demo.rs"
+
+[[bin]]
+name = "real_3d_demo"
+path = "src/real_3d_demo.rs"
+
+[[bin]]
+name = "lighting_3d_demo"
+path = "src/lighting_3d_demo.rs"
+
 [dependencies]
 vizuara-core = { path = "../vizuara-core" }
 vizuara-plots = { path = "../vizuara-plots" }
 vizuara-scene = { path = "../vizuara-scene" }
+vizuara-components = { path = "../vizuara-components" }
 vizuara-window = { path = "../vizuara-window" }
 vizuara-interactivity = { path = "../vizuara-interactivity" }
 vizuara-wgpu = { path = "../vizuara-wgpu" }
+vizuara-3d = { path = "../vizuara-3d" }
+vizuara-animation = { path = "../vizuara-animation" }
 winit = { workspace = true }
 nalgebra = { workspace = true }
 tokio ={workspace=true}

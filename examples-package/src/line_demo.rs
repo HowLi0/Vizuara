@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("💡 按 ESC 退出，按 R 刷新");
     
     // 7. 显示在窗口中
-    show_figure(figure).await?;
+    show_figure(figure)?;
     
     Ok(())
 }

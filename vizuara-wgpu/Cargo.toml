@@ -8,6 +8,7 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 vizuara-core = { path = "../vizuara-core" }
+vizuara-3d = { path = "../vizuara-3d" }
 wgpu = { workspace = true }
 winit = { workspace = true }
 nalgebra = { workspace = true }

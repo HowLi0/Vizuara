@@ -101,7 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("💡 提示：按 ESC 退出，按 R 刷新");
     
     // 显示综合图表
-    show_figure(figure).await?;
+    show_figure(figure)?;
     
     Ok(())
 }

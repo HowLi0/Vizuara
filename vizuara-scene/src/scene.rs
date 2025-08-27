@@ -1,6 +1,6 @@
 use vizuara_core::{Primitive, LinearScale};
 use vizuara_components::{Axis, AxisDirection};
-use vizuara_plots::{ScatterPlot, LinePlot, BarPlot, PlotArea};
+use vizuara_plots::{ScatterPlot, LinePlot, BarPlot, Histogram, Heatmap, BoxPlot, PlotArea};
 use nalgebra::Point2;
 
 /// 场景：包含坐标轴和多个图表的绘图区域
@@ -33,6 +33,27 @@ impl PlotRenderer for LinePlot {
 
 // 为 BarPlot 实现 PlotRenderer
 impl PlotRenderer for BarPlot {
+    fn generate_primitives(&self, plot_area: PlotArea) -> Vec<Primitive> {
+        self.generate_primitives(plot_area)
+    }
+}
+
+// 为 Histogram 实现 PlotRenderer
+impl PlotRenderer for Histogram {
+    fn generate_primitives(&self, plot_area: PlotArea) -> Vec<Primitive> {
+        self.generate_primitives(plot_area)
+    }
+}
+
+// 为 Heatmap 实现 PlotRenderer
+impl PlotRenderer for Heatmap {
+    fn generate_primitives(&self, plot_area: PlotArea) -> Vec<Primitive> {
+        self.generate_primitives(plot_area)
+    }
+}
+
+// 为 BoxPlot 实现 PlotRenderer
+impl PlotRenderer for BoxPlot {
     fn generate_primitives(&self, plot_area: PlotArea) -> Vec<Primitive> {
         self.generate_primitives(plot_area)
     }
@@ -100,6 +121,24 @@ impl Scene {
 
     /// 添加柱状图
     pub fn add_bar_plot(mut self, plot: BarPlot) -> Self {
+        self.plots.push(Box::new(plot));
+        self
+    }
+
+    /// 添加直方图
+    pub fn add_histogram(mut self, plot: Histogram) -> Self {
+        self.plots.push(Box::new(plot));
+        self
+    }
+
+    /// 添加热力图
+    pub fn add_heatmap(mut self, plot: Heatmap) -> Self {
+        self.plots.push(Box::new(plot));
+        self
+    }
+
+    /// 添加箱线图
+    pub fn add_boxplot(mut self, plot: BoxPlot) -> Self {
         self.plots.push(Box::new(plot));
         self
     }

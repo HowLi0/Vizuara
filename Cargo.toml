@@ -1,13 +1,14 @@
 [workspace]
 members = [
     "vizuara-core",
-    "vizuara-wgpu", 
-    "vizuara-window",
-    "vizuara-scene",
-    "vizuara-plots",
-    "vizuara-components",
+    "vizuara-components", 
     "vizuara-layout",
+    "vizuara-plots",
+    "vizuara-scene",
+    "vizuara-wgpu",
+    "vizuara-window",
     "vizuara-interactivity",
+    "vizuara-animation",
     "examples-package",
 ]
 resolver = "2"

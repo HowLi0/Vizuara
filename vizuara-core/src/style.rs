@@ -131,3 +131,43 @@ impl Style {
         self
     }
 }
+
+// 为Color实现运算符重载
+impl std::ops::Add for Color {
+    type Output = Color;
+    
+    fn add(self, other: Color) -> Color {
+        Color {
+            r: self.r + other.r,
+            g: self.g + other.g,
+            b: self.b + other.b,
+            a: self.a + other.a,
+        }
+    }
+}
+
+impl std::ops::Mul<f32> for Color {
+    type Output = Color;
+    
+    fn mul(self, scalar: f32) -> Color {
+        Color {
+            r: self.r * scalar,
+            g: self.g * scalar,
+            b: self.b * scalar,
+            a: self.a * scalar,
+        }
+    }
+}
+
+impl std::ops::Mul<Color> for Color {
+    type Output = Color;
+    
+    fn mul(self, other: Color) -> Color {
+        Color {
+            r: self.r * other.r,
+            g: self.g * other.g,
+            b: self.b * other.b,
+            a: self.a * other.a,
+        }
+    }
+}

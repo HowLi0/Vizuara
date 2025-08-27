@@ -1,0 +1,15 @@
+[package]
+name = "vizuara-animation"
+version = "0.1.0"
+edition = "2021"
+authors = ["Vizuara Team"]
+license = "MIT OR Apache-2.0"
+description = "Animation system for Vizuara visualizations"
+
+[dependencies]
+vizuara-core = { path = "../vizuara-core" }
+nalgebra = { workspace = true }
+tokio = { version = "1", features = ["time", "macros"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

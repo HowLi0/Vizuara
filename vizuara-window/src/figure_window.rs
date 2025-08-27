@@ -14,17 +14,44 @@ use vizuara_scene::Figure;
 
 /// 专门用于渲染 Figure 的窗口应用
 pub struct FigureWindow {
-    figure: Figure,
+    #[allow(dead_code)]
+    title: String,
+    #[allow(dead_code)]
+    width: u32,
+    #[allow(dead_code)]
+    height: u32,
 }
 
 impl FigureWindow {
     /// 创建新的 Figure 窗口
-    pub fn new(figure: Figure) -> Self {
+    pub fn new(title: String, width: u32, height: u32) -> Result<Self> {
+        Ok(Self { title, width, height })
+    }
+    
+    /// 显示 Figure
+    pub fn show_figure(&self, figure: Figure) -> Result<()> {
+        tokio::runtime::Runtime::new().unwrap().block_on(self.show_figure_async(figure))
+    }
+    
+    /// 异步显示 Figure
+    pub async fn show_figure_async(&self, figure: Figure) -> Result<()> {
+        let window = FigureWindowRunner::new(figure);
+        window.run().await
+    }
+}
+
+/// 实际的窗口运行器
+struct FigureWindowRunner {
+    figure: Figure,
+}
+
+impl FigureWindowRunner {
+    fn new(figure: Figure) -> Self {
         Self { figure }
     }
 
     /// 运行窗口应用，显示 Figure
-    pub async fn run(self) -> Result<()> {
+    async fn run(self) -> Result<()> {
         println!("🖼️  启动 Figure 窗口渲染...");
         
         // 创建事件循环
@@ -136,9 +163,14 @@ impl FigureWindow {
 }
 
 /// 便捷方法：直接显示 Figure
-pub async fn show_figure(figure: Figure) -> Result<()> {
-    let window = FigureWindow::new(figure);
+pub async fn show_figure_async(figure: Figure) -> Result<()> {
+    let window = FigureWindowRunner::new(figure);
     window.run().await
+}
+
+/// 便捷方法：同步显示 Figure  
+pub fn show_figure(figure: Figure) -> Result<()> {
+    tokio::runtime::Runtime::new().unwrap().block_on(show_figure_async(figure))
 }
 
 #[cfg(test)]
@@ -150,11 +182,11 @@ mod tests {
 
     #[test]
     fn test_figure_window_creation() {
-        let figure = Figure::new(800.0, 600.0);
-        let window = FigureWindow::new(figure);
+        let window = FigureWindow::new("Test".to_string(), 800, 600).unwrap();
         
         // 基础创建测试
-        assert_eq!(window.figure.size(), (800.0, 600.0));
+        assert_eq!(window.width, 800);
+        assert_eq!(window.height, 600);
     }
 
     #[test]
@@ -178,10 +210,8 @@ mod tests {
             .title("Test Scatter Plot")
             .add_scene(scene);
         
-        let window = FigureWindow::new(figure);
-        
         // 验证能生成图元
-        let primitives = window.figure.generate_primitives();
+        let primitives = figure.generate_primitives();
         assert!(!primitives.is_empty());
     }
 }

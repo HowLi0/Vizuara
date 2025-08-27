@@ -27,6 +27,18 @@
 				"$rustc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "cargo-run-boxplot-demo",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin boxplot_demo",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-animation-demo",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin animation_demo",
+			"group": "build"
 		}
 	]
 }

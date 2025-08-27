@@ -1,0 +1,15 @@
+[package]
+name = "vizuara-3d"
+version = "0.1.0"
+edition = "2021"
+authors = ["Vizuara Team"]
+license = "MIT OR Apache-2.0"
+description = "3D visualization components for Vizuara"
+
+[dependencies]
+vizuara-core = { path = "../vizuara-core" }
+nalgebra = { workspace = true }
+wgpu = { workspace = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
