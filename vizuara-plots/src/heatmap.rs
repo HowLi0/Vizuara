@@ -1,5 +1,5 @@
-use vizuara_core::{Primitive, Color};
 use nalgebra::Point2;
+use vizuara_core::{Color, Primitive};
 
 /// 热力图数据点
 #[derive(Debug, Clone)]
@@ -14,7 +14,11 @@ pub struct HeatmapCell {
 
 impl HeatmapCell {
     pub fn new(x_index: usize, y_index: usize, value: f32) -> Self {
-        Self { x_index, y_index, value }
+        Self {
+            x_index,
+            y_index,
+            value,
+        }
     }
 }
 
@@ -43,7 +47,7 @@ impl ColorMap {
     /// 根据标准化值 (0.0-1.0) 获取对应颜色
     pub fn get_color(&self, normalized_value: f32) -> Color {
         let t = normalized_value.clamp(0.0, 1.0);
-        
+
         match self {
             ColorMap::BlueWhiteRed => {
                 if t < 0.5 {
@@ -55,27 +59,21 @@ impl ColorMap {
                     let factor = (t - 0.5) * 2.0;
                     Color::rgb(1.0, 1.0 - factor, 1.0 - factor)
                 }
-            },
-            ColorMap::BlueGreen => {
-                Color::rgb(0.0, t, 1.0 - t)
-            },
-            ColorMap::Grayscale => {
-                Color::rgb(t, t, t)
-            },
+            }
+            ColorMap::BlueGreen => Color::rgb(0.0, t, 1.0 - t),
+            ColorMap::Grayscale => Color::rgb(t, t, t),
             ColorMap::Rainbow => {
                 // HSV彩虹映射: H = t * 300° (避免回到红色)
                 let h = t * 300.0; // 色相角度
                 let s = 1.0; // 饱和度
                 let v = 1.0; // 明度
                 hsv_to_rgb(h, s, v)
-            },
-            ColorMap::Custom(start, end) => {
-                Color::rgb(
-                    start.r + t * (end.r - start.r),
-                    start.g + t * (end.g - start.g),
-                    start.b + t * (end.b - start.b),
-                )
             }
+            ColorMap::Custom(start, end) => Color::rgb(
+                start.r + t * (end.r - start.r),
+                start.g + t * (end.g - start.g),
+                start.b + t * (end.b - start.b),
+            ),
         }
     }
 }
@@ -86,7 +84,7 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> Color {
     let h_prime = h / 60.0;
     let x = c * (1.0 - ((h_prime % 2.0) - 1.0).abs());
     let m = v - c;
-    
+
     let (r_prime, g_prime, b_prime) = match h_prime as i32 {
         0 => (c, x, 0.0),
         1 => (x, c, 0.0),
@@ -95,7 +93,7 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> Color {
         4 => (x, 0.0, c),
         _ => (c, 0.0, x),
     };
-    
+
     Color::rgb(r_prime + m, g_prime + m, b_prime + m)
 }
 
@@ -169,16 +167,16 @@ impl Heatmap {
 
     /// 从1D数组和维度设置数据
     pub fn data_matrix(mut self, data: &[f32], rows: usize, cols: usize) -> Self {
-        assert_eq!(data.len(), rows * cols, "Data length must match rows * cols");
-        
+        assert_eq!(
+            data.len(),
+            rows * cols,
+            "Data length must match rows * cols"
+        );
+
         self.data = (0..rows)
-            .map(|row| {
-                (0..cols)
-                    .map(|col| data[row * cols + col])
-                    .collect()
-            })
+            .map(|row| (0..cols).map(|col| data[row * cols + col]).collect())
             .collect();
-        
+
         self.auto_generate_labels();
         self.compute_value_range();
         self
@@ -408,11 +406,8 @@ mod tests {
 
     #[test]
     fn test_heatmap_with_2d_data() {
-        let data = vec![
-            vec![1.0, 2.0, 3.0],
-            vec![4.0, 5.0, 6.0],
-        ];
-        
+        let data = vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]];
+
         let heatmap = Heatmap::new().data(&data);
         assert_eq!(heatmap.dimensions(), (2, 3));
         assert_eq!(heatmap.get_value(0, 1), Some(2.0));
@@ -423,7 +418,7 @@ mod tests {
     fn test_heatmap_with_matrix_data() {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
         let heatmap = Heatmap::new().data_matrix(&data, 2, 3);
-        
+
         assert_eq!(heatmap.dimensions(), (2, 3));
         assert_eq!(heatmap.get_value(0, 0), Some(1.0));
         assert_eq!(heatmap.get_value(1, 2), Some(6.0));
@@ -432,12 +427,12 @@ mod tests {
     #[test]
     fn test_color_mapping() {
         let color_map = ColorMap::BlueWhiteRed;
-        
+
         // 测试边界值
         let blue = color_map.get_color(0.0);
         let white = color_map.get_color(0.5);
         let red = color_map.get_color(1.0);
-        
+
         // 蓝色 (0.0): 应该是蓝色分量高
         assert!(blue.b > 0.8);
         // 白色 (0.5): 所有分量都应该高
@@ -448,12 +443,8 @@ mod tests {
 
     #[test]
     fn test_auto_labels() {
-        let data = vec![
-            vec![1.0, 2.0],
-            vec![3.0, 4.0],
-            vec![5.0, 6.0],
-        ];
-        
+        let data = vec![vec![1.0, 2.0], vec![3.0, 4.0], vec![5.0, 6.0]];
+
         let heatmap = Heatmap::new().data(&data);
         assert_eq!(heatmap.x_labels, vec!["C0", "C1"]);
         assert_eq!(heatmap.y_labels, vec!["R0", "R1", "R2"]);
@@ -462,23 +453,20 @@ mod tests {
     #[test]
     fn test_custom_labels() {
         let data = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
-        
+
         let heatmap = Heatmap::new()
             .data(&data)
             .x_labels(&["Week 1", "Week 2"])
             .y_labels(&["Product A", "Product B"]);
-        
+
         assert_eq!(heatmap.x_labels, vec!["Week 1", "Week 2"]);
         assert_eq!(heatmap.y_labels, vec!["Product A", "Product B"]);
     }
 
     #[test]
     fn test_value_range() {
-        let data = vec![
-            vec![1.0, 5.0],
-            vec![2.0, 8.0],
-        ];
-        
+        let data = vec![vec![1.0, 5.0], vec![2.0, 8.0]];
+
         let heatmap = Heatmap::new().data(&data).auto_range();
         assert_eq!(heatmap.value_range, Some((1.0, 8.0)));
     }
@@ -487,10 +475,10 @@ mod tests {
     fn test_primitive_generation() {
         let data = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
         let heatmap = Heatmap::new().data(&data).auto_range();
-        
+
         let plot_area = crate::PlotArea::new(0.0, 0.0, 100.0, 100.0);
         let primitives = heatmap.generate_primitives(plot_area);
-        
+
         // 应该有4个单元格矩形 + 标签
         assert!(primitives.len() >= 4);
     }

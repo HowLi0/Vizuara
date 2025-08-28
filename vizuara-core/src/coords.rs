@@ -1,4 +1,4 @@
-use nalgebra::{Point2, Point3, Matrix3, Matrix4};
+use nalgebra::{Matrix3, Matrix4, Point2, Point3};
 use serde::{Deserialize, Serialize};
 
 /// 逻辑屏幕坐标位置
@@ -19,10 +19,10 @@ pub struct WorldPosition {
 pub trait CoordinateSystem {
     /// 将数据坐标转换为屏幕坐标
     fn data_to_screen(&self, data_point: Point2<f32>) -> Point2<f32>;
-    
+
     /// 将屏幕坐标转换为数据坐标
     fn screen_to_data(&self, screen_point: Point2<f32>) -> Point2<f32>;
-    
+
     /// 获取坐标系的变换矩阵
     fn transform_matrix(&self) -> Matrix3<f32>;
 }
@@ -40,24 +40,21 @@ pub struct CartesianCoords {
 
 impl CartesianCoords {
     /// 创建新的笛卡尔坐标系
-    pub fn new(
-        data_bounds: (f32, f32, f32, f32),
-        screen_bounds: (f32, f32, f32, f32),
-    ) -> Self {
+    pub fn new(data_bounds: (f32, f32, f32, f32), screen_bounds: (f32, f32, f32, f32)) -> Self {
         Self {
             data_bounds,
             screen_bounds,
             flip_y: true,
         }
     }
-    
+
     /// 计算 X 轴的缩放比例
     pub fn x_scale(&self) -> f32 {
         let data_width = self.data_bounds.2 - self.data_bounds.0;
         let screen_width = self.screen_bounds.2 - self.screen_bounds.0;
         screen_width / data_width
     }
-    
+
     /// 计算 Y 轴的缩放比例
     pub fn y_scale(&self) -> f32 {
         let data_height = self.data_bounds.3 - self.data_bounds.1;
@@ -76,7 +73,7 @@ impl CoordinateSystem for CartesianCoords {
         };
         Point2::new(x, y)
     }
-    
+
     fn screen_to_data(&self, screen_point: Point2<f32>) -> Point2<f32> {
         let x = (screen_point.x - self.screen_bounds.0) / self.x_scale() + self.data_bounds.0;
         let y = if self.flip_y {
@@ -86,22 +83,22 @@ impl CoordinateSystem for CartesianCoords {
         };
         Point2::new(x, y)
     }
-    
+
     fn transform_matrix(&self) -> Matrix3<f32> {
         let sx = self.x_scale();
-        let sy = if self.flip_y { -self.y_scale() } else { self.y_scale() };
+        let sy = if self.flip_y {
+            -self.y_scale()
+        } else {
+            self.y_scale()
+        };
         let tx = self.screen_bounds.0 - self.data_bounds.0 * sx;
         let ty = if self.flip_y {
             self.screen_bounds.3 + self.data_bounds.1 * sy
         } else {
             self.screen_bounds.1 - self.data_bounds.1 * sy
         };
-        
-        Matrix3::new(
-            sx, 0.0, tx,
-            0.0, sy, ty,
-            0.0, 0.0, 1.0,
-        )
+
+        Matrix3::new(sx, 0.0, tx, 0.0, sy, ty, 0.0, 0.0, 1.0)
     }
 }
 
@@ -129,7 +126,7 @@ impl Cartesian3DCoords {
             projection_matrix,
         }
     }
-    
+
     /// 将 3D 点投影到 2D 屏幕坐标
     pub fn project_3d_to_2d(&self, point: Point3<f32>) -> Point2<f32> {
         let homogeneous = self.projection_matrix * self.view_matrix * point.to_homogeneous();

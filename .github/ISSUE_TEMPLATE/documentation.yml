@@ -1,0 +1,173 @@
+name: 📚 Documentation Issue
+description: Report issues with documentation or suggest improvements
+title: "[Docs]: "
+labels: ["documentation", "needs-review"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您关注文档质量！清晰准确的文档对于项目成功至关重要。
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: 文档类型
+      description: 这个问题涉及哪种类型的文档？
+      options:
+        - API Documentation - API 文档
+        - User Guide - 用户指南
+        - Tutorial - 教程
+        - Examples - 示例代码
+        - README - README 文件
+        - Contributing Guide - 贡献指南
+        - Roadmap - 项目路线图
+        - Code Comments - 代码注释
+        - Other - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: 问题类型
+      description: 这是什么类型的文档问题？
+      options:
+        - Missing - 缺少文档
+        - Incorrect - 内容错误
+        - Outdated - 内容过时
+        - Unclear - 表达不清
+        - Incomplete - 内容不完整
+        - Inconsistent - 前后不一致
+        - Suggestion - 改进建议
+    validations:
+      required: true
+
+  - type: textarea
+    id: location
+    attributes:
+      label: 文档位置
+      description: 问题出现在哪个文档或页面？
+      placeholder: |
+        请提供具体位置：
+        - 文件路径：例如 `docs/api/plots.md`
+        - 网页链接：例如 `https://docs.vizuara.dev/api/scatter`
+        - 函数/结构体：例如 `ScatterPlot::new()`
+        - 章节标题：例如 "快速开始 - 创建第一个图表"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-content
+    attributes:
+      label: 当前内容
+      description: 当前的文档内容是什么？（如果适用）
+      placeholder: |
+        复制粘贴当前的文档内容...
+      render: markdown
+
+  - type: textarea
+    id: issue-description
+    attributes:
+      label: 问题描述
+      description: 详细描述文档问题
+      placeholder: |
+        例如：
+        - API 文档中缺少参数说明
+        - 示例代码无法运行
+        - 教程步骤不清楚
+        - 链接已失效
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-content
+    attributes:
+      label: 建议内容
+      description: 您建议如何改进？（如果有想法）
+      placeholder: |
+        提供您的改进建议...
+      render: markdown
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 使用场景
+      description: 您在什么情况下遇到这个文档问题？
+      placeholder: |
+        例如：
+        - 作为新用户尝试入门时
+        - 实现特定功能时查阅 API
+        - 学习最佳实践时
+        - 贡献代码时查看指南
+
+  - type: dropdown
+    id: user-level
+    attributes:
+      label: 用户水平
+      description: 您的 Rust 和可视化经验水平？
+      options:
+        - Beginner - 初学者
+        - Intermediate - 中级
+        - Advanced - 高级
+        - Expert - 专家
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级
+      description: 您认为这个文档问题的重要性如何？
+      options:
+        - Low - 轻微问题
+        - Medium - 中等重要
+        - High - 很重要
+        - Critical - 严重阻碍使用
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: 影响范围
+      description: 这个问题可能影响哪些用户？
+      options:
+        - label: 新用户入门
+        - label: 日常使用
+        - label: 高级功能
+        - label: 开发者贡献
+        - label: API 集成
+        - label: 性能优化
+        - label: 故障排除
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: 相关示例
+      description: 如果涉及代码，请提供示例
+      placeholder: |
+        ```rust
+        // 相关的代码示例
+        ```
+      render: rust
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: 贡献意愿
+      description: 您是否愿意帮助改进文档？
+      options:
+        - label: 我愿意提交 PR 来修复这个文档问题
+        - label: 我可以帮助审查文档改进
+        - label: 我可以提供更多示例或用例
+        - label: 我可以协助翻译文档
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 额外信息
+      description: 任何其他相关信息
+      placeholder: |
+        - 截图或录屏
+        - 相关讨论链接
+        - 外部参考资料

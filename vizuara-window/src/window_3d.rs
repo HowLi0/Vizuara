@@ -1,14 +1,14 @@
-use winit::{
-    event::{Event, WindowEvent, ElementState, MouseButton, DeviceEvent},
-    event_loop::EventLoop,
-    window::WindowBuilder,
-    keyboard::{Key, NamedKey},
-};
-use std::sync::Arc;
-use vizuara_core::{Result, VizuaraError, Color};
-use vizuara_wgpu::{Wgpu3DRenderer, Vertex3D};
-use vizuara_3d::{Scatter3D, Surface3D, Mesh3D};
 use nalgebra::Point3;
+use std::sync::Arc;
+use vizuara_3d::{Mesh3D, Scatter3D, Surface3D};
+use vizuara_core::{Color, Result, VizuaraError};
+use vizuara_wgpu::{Vertex3D, Wgpu3DRenderer};
+use winit::{
+    event::{DeviceEvent, ElementState, Event, MouseButton, WindowEvent},
+    event_loop::EventLoop,
+    keyboard::{Key, NamedKey},
+    window::WindowBuilder,
+};
 
 /// 3D可视化窗口应用
 pub struct Window3D {
@@ -48,126 +48,143 @@ impl Window3D {
     /// 运行3D窗口应用
     pub async fn run(self) -> Result<()> {
         println!("🌟 启动3D可视化窗口...");
-        
-        let event_loop = EventLoop::new()
-            .map_err(|e| VizuaraError::RenderError(format!("Failed to create event loop: {}", e)))?;
-        
+
+        let event_loop = EventLoop::new().map_err(|e| {
+            VizuaraError::RenderError(format!("Failed to create event loop: {}", e))
+        })?;
+
         let window = Arc::new(
             WindowBuilder::new()
                 .with_title("Vizuara 3D - 三维科学可视化")
                 .with_inner_size(winit::dpi::LogicalSize::new(1024, 768))
                 .with_min_inner_size(winit::dpi::LogicalSize::new(400, 300))
                 .build(&event_loop)
-                .map_err(|e| VizuaraError::RenderError(format!("Failed to create window: {}", e)))?
+                .map_err(|e| {
+                    VizuaraError::RenderError(format!("Failed to create window: {}", e))
+                })?,
         );
 
         let size = window.inner_size();
         println!("✅ 3D窗口创建成功: {}x{}", size.width, size.height);
 
         // 初始化3D渲染器
-    let (mut renderer, surface) = Wgpu3DRenderer::new(&window, size).await?;
-        
+        let (mut renderer, surface) = Wgpu3DRenderer::new(&window, size).await?;
+
         // 生成3D几何数据
         let (vertices, indices) = self.generate_3d_geometry();
-        println!("📐 生成了 {} 个顶点，{} 个三角形", vertices.len(), indices.len() / 3);
+        println!(
+            "📐 生成了 {} 个顶点，{} 个三角形",
+            vertices.len(),
+            indices.len() / 3
+        );
 
         let mut mouse_pressed = false;
         let mut last_mouse_pos: Option<(f32, f32)> = None;
         let window_clone = window.clone();
 
-        event_loop.run(move |event, elwt| {
-            match event {
-                Event::WindowEvent {
-                    ref event,
-                    window_id,
-                } if window_id == window_clone.id() => {
-                    match event {
-                        WindowEvent::CloseRequested => {
-                            println!("🔚 关闭3D窗口");
-                            elwt.exit();
-                        }
-                        WindowEvent::Resized(physical_size) => {
-                            println!("📏 窗口尺寸变更: {}x{}", physical_size.width, physical_size.height);
-                            renderer.resize(*physical_size);
-                            surface.configure(&renderer.device, &renderer.config);
-                        }
-                        WindowEvent::MouseInput { button: MouseButton::Left, state, .. } => {
-                            mouse_pressed = *state == ElementState::Pressed;
-                            if !mouse_pressed {
-                                last_mouse_pos = None;
+        event_loop
+            .run(move |event, elwt| {
+                match event {
+                    Event::WindowEvent {
+                        ref event,
+                        window_id,
+                    } if window_id == window_clone.id() => {
+                        match event {
+                            WindowEvent::CloseRequested => {
+                                println!("🔚 关闭3D窗口");
+                                elwt.exit();
                             }
-                        }
-                        WindowEvent::CursorMoved { position, .. } => {
-                            if mouse_pressed {
-                                if let Some((last_x, last_y)) = last_mouse_pos {
-                                    let delta_x = position.x as f32 - last_x;
-                                    let delta_y = position.y as f32 - last_y;
-                                    renderer.rotate_camera(delta_x, delta_y);
-                                    window_clone.request_redraw();
+                            WindowEvent::Resized(physical_size) => {
+                                println!(
+                                    "📏 窗口尺寸变更: {}x{}",
+                                    physical_size.width, physical_size.height
+                                );
+                                renderer.resize(*physical_size);
+                                surface.configure(&renderer.device, &renderer.config);
+                            }
+                            WindowEvent::MouseInput {
+                                button: MouseButton::Left,
+                                state,
+                                ..
+                            } => {
+                                mouse_pressed = *state == ElementState::Pressed;
+                                if !mouse_pressed {
+                                    last_mouse_pos = None;
                                 }
-                                last_mouse_pos = Some((position.x as f32, position.y as f32));
                             }
+                            WindowEvent::CursorMoved { position, .. } => {
+                                if mouse_pressed {
+                                    if let Some((last_x, last_y)) = last_mouse_pos {
+                                        let delta_x = position.x as f32 - last_x;
+                                        let delta_y = position.y as f32 - last_y;
+                                        renderer.rotate_camera(delta_x, delta_y);
+                                        window_clone.request_redraw();
+                                    }
+                                    last_mouse_pos = Some((position.x as f32, position.y as f32));
+                                }
+                            }
+                            WindowEvent::MouseWheel { delta, .. } => {
+                                let scroll_delta = match delta {
+                                    winit::event::MouseScrollDelta::LineDelta(_, y) => *y,
+                                    winit::event::MouseScrollDelta::PixelDelta(pos) => {
+                                        pos.y as f32 * 0.01
+                                    }
+                                };
+                                renderer.zoom_camera(-scroll_delta);
+                                window_clone.request_redraw();
+                            }
+                            WindowEvent::KeyboardInput { event, .. } => {
+                                if event.state == ElementState::Pressed {
+                                    match event.logical_key {
+                                        Key::Named(NamedKey::Escape) => {
+                                            elwt.exit();
+                                        }
+                                        Key::Character(ref c) => {
+                                            match c.as_str() {
+                                                "r" | "R" => {
+                                                    // 重置相机
+                                                    renderer.set_camera(
+                                                        Point3::new(4.0, 3.0, 2.0),
+                                                        Point3::new(0.0, 0.0, 0.0),
+                                                        nalgebra::Vector3::new(0.0, 1.0, 0.0),
+                                                    );
+                                                    window_clone.request_redraw();
+                                                    println!("📷 相机已重置");
+                                                }
+                                                _ => {}
+                                            }
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                            WindowEvent::RedrawRequested => {
+                                match renderer.render_3d(&surface, &vertices, &indices) {
+                                    Ok(()) => {}
+                                    Err(e) => {
+                                        eprintln!("渲染错误: {:?}", e);
+                                    }
+                                }
+                            }
+                            _ => {}
                         }
-                        WindowEvent::MouseWheel { delta, .. } => {
-                            let scroll_delta = match delta {
-                                winit::event::MouseScrollDelta::LineDelta(_, y) => *y,
-                                winit::event::MouseScrollDelta::PixelDelta(pos) => pos.y as f32 * 0.01,
-                            };
-                            renderer.zoom_camera(-scroll_delta);
+                    }
+                    Event::DeviceEvent {
+                        event: DeviceEvent::MouseMotion { delta },
+                        ..
+                    } => {
+                        if mouse_pressed {
+                            renderer.rotate_camera(delta.0 as f32, delta.1 as f32);
                             window_clone.request_redraw();
                         }
-                        WindowEvent::KeyboardInput { event, .. } => {
-                            if event.state == ElementState::Pressed {
-                                match event.logical_key {
-                                    Key::Named(NamedKey::Escape) => {
-                                        elwt.exit();
-                                    }
-                                    Key::Character(ref c) => {
-                                        match c.as_str() {
-                                            "r" | "R" => {
-                                                // 重置相机
-                                                renderer.set_camera(
-                                                    Point3::new(4.0, 3.0, 2.0),
-                                                    Point3::new(0.0, 0.0, 0.0),
-                                                    nalgebra::Vector3::new(0.0, 1.0, 0.0)
-                                                );
-                                                window_clone.request_redraw();
-                                                println!("📷 相机已重置");
-                                            }
-                                            _ => {}
-                                        }
-                                    }
-                                    _ => {}
-                                }
-                            }
-                        }
-                        WindowEvent::RedrawRequested => {
-                            match renderer.render_3d(&surface, &vertices, &indices) {
-                                Ok(()) => {}
-                                Err(e) => {
-                                    eprintln!("渲染错误: {:?}", e);
-                                }
-                            }
-                        }
-                        _ => {}
                     }
-                }
-                Event::DeviceEvent { 
-                    event: DeviceEvent::MouseMotion { delta }, 
-                    .. 
-                } => {
-                    if mouse_pressed {
-                        renderer.rotate_camera(delta.0 as f32, delta.1 as f32);
+                    Event::AboutToWait => {
                         window_clone.request_redraw();
                     }
+                    _ => {}
                 }
-                Event::AboutToWait => {
-                    window_clone.request_redraw();
-                }
-                _ => {}
-            }
-        })
-        .map_err(|e| VizuaraError::RenderError(format!("Event loop error: {}", e)))?;
+            })
+            .map_err(|e| VizuaraError::RenderError(format!("Event loop error: {}", e)))?;
 
         Ok(())
     }
@@ -182,24 +199,54 @@ impl Window3D {
             let scatter_vertices = self.generate_scatter_vertices(scatter);
             let base_index = vertices.len() as u16;
             vertices.extend(scatter_vertices);
-            
+
             // 为每个点生成小立方体
             for i in 0..scatter.point_count() {
                 let base = base_index + (i * 8) as u16;
                 // 立方体的12个三角形 (每个面2个三角形)
                 let cube_indices = [
                     // 前面
-                    base, base+1, base+2, base, base+2, base+3,
-                    // 后面  
-                    base+4, base+6, base+5, base+4, base+7, base+6,
+                    base,
+                    base + 1,
+                    base + 2,
+                    base,
+                    base + 2,
+                    base + 3,
+                    // 后面
+                    base + 4,
+                    base + 6,
+                    base + 5,
+                    base + 4,
+                    base + 7,
+                    base + 6,
                     // 左面
-                    base, base+4, base+5, base, base+5, base+1,
+                    base,
+                    base + 4,
+                    base + 5,
+                    base,
+                    base + 5,
+                    base + 1,
                     // 右面
-                    base+2, base+6, base+7, base+2, base+7, base+3,
+                    base + 2,
+                    base + 6,
+                    base + 7,
+                    base + 2,
+                    base + 7,
+                    base + 3,
                     // 上面
-                    base+1, base+5, base+6, base+1, base+6, base+2,
+                    base + 1,
+                    base + 5,
+                    base + 6,
+                    base + 1,
+                    base + 6,
+                    base + 2,
                     // 下面
-                    base, base+3, base+7, base, base+7, base+4,
+                    base,
+                    base + 3,
+                    base + 7,
+                    base,
+                    base + 7,
+                    base + 4,
                 ];
                 indices.extend_from_slice(&cube_indices);
             }
@@ -280,8 +327,8 @@ impl Window3D {
         }
 
         // 生成三角形索引
-        for y in 0..height-1 {
-            for x in 0..width-1 {
+        for y in 0..height - 1 {
+            for x in 0..width - 1 {
                 let i0 = (y * width + x) as u16;
                 let i1 = (y * width + x + 1) as u16;
                 let i2 = ((y + 1) * width + x) as u16;
@@ -309,7 +356,11 @@ impl Window3D {
 
         for i in 0..mesh.triangle_count() {
             if let Some(triangle) = mesh.triangle_at(i) {
-                indices.extend_from_slice(&[triangle.0 as u16, triangle.1 as u16, triangle.2 as u16]);
+                indices.extend_from_slice(&[
+                    triangle.0 as u16,
+                    triangle.1 as u16,
+                    triangle.2 as u16,
+                ]);
             }
         }
 
@@ -320,29 +371,24 @@ impl Window3D {
     fn generate_test_cube(&self) -> (Vec<Vertex3D>, Vec<u16>) {
         let vertices = vec![
             // 前面 (红色)
-            Vertex3D::new([-1.0, -1.0,  1.0], [1.0, 0.0, 0.0, 1.0]),
-            Vertex3D::new([ 1.0, -1.0,  1.0], [1.0, 0.0, 0.0, 1.0]),
-            Vertex3D::new([ 1.0,  1.0,  1.0], [1.0, 0.0, 0.0, 1.0]),
-            Vertex3D::new([-1.0,  1.0,  1.0], [1.0, 0.0, 0.0, 1.0]),
+            Vertex3D::new([-1.0, -1.0, 1.0], [1.0, 0.0, 0.0, 1.0]),
+            Vertex3D::new([1.0, -1.0, 1.0], [1.0, 0.0, 0.0, 1.0]),
+            Vertex3D::new([1.0, 1.0, 1.0], [1.0, 0.0, 0.0, 1.0]),
+            Vertex3D::new([-1.0, 1.0, 1.0], [1.0, 0.0, 0.0, 1.0]),
             // 后面 (绿色)
             Vertex3D::new([-1.0, -1.0, -1.0], [0.0, 1.0, 0.0, 1.0]),
-            Vertex3D::new([ 1.0, -1.0, -1.0], [0.0, 1.0, 0.0, 1.0]),
-            Vertex3D::new([ 1.0,  1.0, -1.0], [0.0, 1.0, 0.0, 1.0]),
-            Vertex3D::new([-1.0,  1.0, -1.0], [0.0, 1.0, 0.0, 1.0]),
+            Vertex3D::new([1.0, -1.0, -1.0], [0.0, 1.0, 0.0, 1.0]),
+            Vertex3D::new([1.0, 1.0, -1.0], [0.0, 1.0, 0.0, 1.0]),
+            Vertex3D::new([-1.0, 1.0, -1.0], [0.0, 1.0, 0.0, 1.0]),
         ];
 
         let indices = vec![
             // 前面
-            0, 1, 2, 0, 2, 3,
-            // 后面
-            4, 6, 5, 4, 7, 6,
-            // 左面
-            0, 4, 5, 0, 5, 1,
-            // 右面
-            2, 6, 7, 2, 7, 3,
-            // 上面
-            1, 5, 6, 1, 6, 2,
-            // 下面
+            0, 1, 2, 0, 2, 3, // 后面
+            4, 6, 5, 4, 7, 6, // 左面
+            0, 4, 5, 0, 5, 1, // 右面
+            2, 6, 7, 2, 7, 3, // 上面
+            1, 5, 6, 1, 6, 2, // 下面
             0, 3, 7, 0, 7, 4,
         ];
 

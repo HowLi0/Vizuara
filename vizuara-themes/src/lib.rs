@@ -1,6 +1,6 @@
-//! 
+//!
 //! Vizuara 主题系统
-//! 
+//!
 //! 提供一致的视觉主题功能，支持：
 //! - 预定义主题 (预设的视觉风格)
 //! - 主题定制 (颜色、字体、样式自定义)
@@ -9,20 +9,20 @@
 //! - 主题继承 (基于现有主题的扩展)
 //!
 
-pub mod theme;
+pub mod builder;
+pub mod manager;
 pub mod palette;
 pub mod presets;
-pub mod manager;
-pub mod builder;
+pub mod theme;
 
-pub use theme::{Theme, ComponentTheme};
+pub use builder::{ComponentThemeBuilder, PaletteBuilder, ThemeBuilder};
+pub use manager::ThemeManager;
 pub use palette::ColorPalette;
 pub use presets::ThemePresets;
-pub use manager::ThemeManager;
-pub use builder::{ThemeBuilder, ComponentThemeBuilder, PaletteBuilder};
+pub use theme::{ComponentTheme, Theme};
 
+use serde::{Deserialize, Serialize};
 use vizuara_core::Color;
-use serde::{Serialize, Deserialize};
 
 /// 主题系统的错误类型
 #[derive(Debug, Clone)]
@@ -186,6 +186,7 @@ impl ThemeValue {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
 
     #[test]
     fn test_theme_value_conversion() {
@@ -215,9 +216,12 @@ mod tests {
     #[test]
     fn test_theme_property_hash() {
         let mut map = HashMap::new();
-        map.insert(ThemeProperty::PrimaryColor, ThemeValue::Color(Color::rgb(1.0, 0.0, 0.0)));
+        map.insert(
+            ThemeProperty::PrimaryColor,
+            ThemeValue::Color(Color::rgb(1.0, 0.0, 0.0)),
+        );
         map.insert(ThemeProperty::FontSize, ThemeValue::Number(14.0));
-        
+
         assert_eq!(map.len(), 2);
         assert!(map.contains_key(&ThemeProperty::PrimaryColor));
         assert!(map.contains_key(&ThemeProperty::FontSize));

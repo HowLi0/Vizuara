@@ -1,5 +1,5 @@
-use vizuara_core::{Primitive, Color};
 use nalgebra::Point2;
+use vizuara_core::{Color, Primitive};
 
 /// 3D 表面图数据点
 #[derive(Debug, Clone)]
@@ -32,7 +32,7 @@ impl SurfaceMesh {
         x_range: (f32, f32),
         y_range: (f32, f32),
         resolution: (usize, usize),
-        func: F
+        func: F,
     ) -> Self
     where
         F: Fn(f32, f32) -> f32,
@@ -91,7 +91,10 @@ impl SurfaceMesh {
 
     /// 获取指定坐标的点
     pub fn point_at(&self, x: usize, y: usize) -> Option<nalgebra::Point3<f32>> {
-        self.points.get(y)?.get(x).map(|p| nalgebra::Point3::new(p.x, p.y, p.z))
+        self.points
+            .get(y)?
+            .get(x)
+            .map(|p| nalgebra::Point3::new(p.x, p.y, p.z))
     }
 
     /// 获取数据边界
@@ -169,7 +172,7 @@ impl Surface3D {
         x_range: (f32, f32),
         y_range: (f32, f32),
         resolution: (usize, usize),
-        func: F
+        func: F,
     ) -> Self
     where
         F: Fn(f32, f32) -> f32,
@@ -223,10 +226,9 @@ impl Surface3D {
         // 绘制水平线
         for i in 0..self.mesh.height {
             for j in 0..(self.mesh.width - 1) {
-                if let (Some(p1), Some(p2)) = (
-                    self.mesh.get_point(i, j),
-                    self.mesh.get_point(i, j + 1)
-                ) {
+                if let (Some(p1), Some(p2)) =
+                    (self.mesh.get_point(i, j), self.mesh.get_point(i, j + 1))
+                {
                     let x1 = offset_x + (p1.x - x_min) / x_range * screen_width;
                     let y1 = offset_y + screen_height - (p1.y - y_min) / y_range * screen_height;
                     let x2 = offset_x + (p2.x - x_min) / x_range * screen_width;
@@ -243,10 +245,9 @@ impl Surface3D {
         // 绘制垂直线
         for j in 0..self.mesh.width {
             for i in 0..(self.mesh.height - 1) {
-                if let (Some(p1), Some(p2)) = (
-                    self.mesh.get_point(i, j),
-                    self.mesh.get_point(i + 1, j)
-                ) {
+                if let (Some(p1), Some(p2)) =
+                    (self.mesh.get_point(i, j), self.mesh.get_point(i + 1, j))
+                {
                     let x1 = offset_x + (p1.x - x_min) / x_range * screen_width;
                     let y1 = offset_y + screen_height - (p1.y - y_min) / y_range * screen_height;
                     let x2 = offset_x + (p2.x - x_min) / x_range * screen_width;
@@ -278,12 +279,8 @@ mod tests {
 
     #[test]
     fn test_surface_mesh_from_function() {
-        let mesh = SurfaceMesh::from_function(
-            (-1.0, 1.0),
-            (-1.0, 1.0),
-            (3, 3),
-            |x, y| x * x + y * y
-        );
+        let mesh =
+            SurfaceMesh::from_function((-1.0, 1.0), (-1.0, 1.0), (3, 3), |x, y| x * x + y * y);
 
         assert_eq!(mesh.width, 3);
         assert_eq!(mesh.height, 3);
@@ -293,12 +290,7 @@ mod tests {
 
     #[test]
     fn test_surface_mesh_bounds() {
-        let mesh = SurfaceMesh::from_function(
-            (-2.0, 2.0),
-            (-1.0, 1.0),
-            (3, 3),
-            |x, y| x + y
-        );
+        let mesh = SurfaceMesh::from_function((-2.0, 2.0), (-1.0, 1.0), (3, 3), |x, y| x + y);
 
         let bounds = mesh.bounds();
         assert_eq!(bounds.0, (-2.0, 2.0)); // X bounds
@@ -307,12 +299,7 @@ mod tests {
 
     #[test]
     fn test_surface3d_creation() {
-        let mesh = SurfaceMesh::from_function(
-            (0.0, 1.0),
-            (0.0, 1.0),
-            (2, 2),
-            |x, y| x + y
-        );
+        let mesh = SurfaceMesh::from_function((0.0, 1.0), (0.0, 1.0), (2, 2), |x, y| x + y);
 
         let surface = Surface3D::new(mesh);
         assert_eq!(surface.mesh().width, 2);
@@ -321,12 +308,9 @@ mod tests {
 
     #[test]
     fn test_surface3d_from_function() {
-        let surface = Surface3D::from_function(
-            (-1.0, 1.0),
-            (-1.0, 1.0),
-            (5, 5),
-            |x, y| (x * x + y * y).sin()
-        );
+        let surface = Surface3D::from_function((-1.0, 1.0), (-1.0, 1.0), (5, 5), |x, y| {
+            (x * x + y * y).sin()
+        });
 
         assert_eq!(surface.mesh().width, 5);
         assert_eq!(surface.mesh().height, 5);
@@ -334,12 +318,7 @@ mod tests {
 
     #[test]
     fn test_surface_style() {
-        let mesh = SurfaceMesh::from_function(
-            (0.0, 1.0),
-            (0.0, 1.0),
-            (2, 2),
-            |_, _| 0.0
-        );
+        let mesh = SurfaceMesh::from_function((0.0, 1.0), (0.0, 1.0), (2, 2), |_, _| 0.0);
 
         let surface = Surface3D::new(mesh)
             .wireframe(true)

@@ -1,14 +1,14 @@
+use crate::{ColorPalette, ComponentTheme, ComponentType, Theme, ThemeProperty, ThemeValue};
 use vizuara_core::Color;
-use crate::{Theme, ComponentTheme, ColorPalette, ComponentType, ThemeProperty, ThemeValue};
 
 /// 预设主题集合
-/// 
+///
 /// 提供常用的预定义主题，开箱即用
 pub struct ThemePresets;
 
 impl ThemePresets {
     /// 默认主题（浅色）
-    pub fn default() -> Theme {
+    pub fn default_theme() -> Theme {
         let palette = ColorPalette::new("Default", "Default light theme")
             .with_primary(Color::rgb(0.2, 0.6, 0.8))
             .with_secondary(Color::rgb(0.8, 0.4, 0.2))
@@ -40,12 +40,12 @@ impl ThemePresets {
             .with_background(Color::rgb(0.98, 0.99, 1.0))
             .with_text(Color::rgb(0.1, 0.1, 0.2))
             .with_series(vec![
-                Color::rgb(0.15, 0.4, 0.7),   // 深蓝
-                Color::rgb(0.2, 0.6, 0.8),    // 中蓝
-                Color::rgb(0.4, 0.7, 0.9),    // 浅蓝
-                Color::rgb(0.1, 0.5, 0.6),    // 蓝绿
-                Color::rgb(0.0, 0.3, 0.5),    // 深蓝绿
-                Color::rgb(0.6, 0.8, 0.9),    // 天蓝
+                Color::rgb(0.15, 0.4, 0.7), // 深蓝
+                Color::rgb(0.2, 0.6, 0.8),  // 中蓝
+                Color::rgb(0.4, 0.7, 0.9),  // 浅蓝
+                Color::rgb(0.1, 0.5, 0.6),  // 蓝绿
+                Color::rgb(0.0, 0.3, 0.5),  // 深蓝绿
+                Color::rgb(0.6, 0.8, 0.9),  // 天蓝
             ]);
 
         Self::create_theme_from_palette("scientific", "科学主题", palette)
@@ -60,12 +60,12 @@ impl ThemePresets {
             .with_background(Color::rgb(0.99, 0.99, 0.99))
             .with_text(Color::rgb(0.1, 0.1, 0.1))
             .with_series(vec![
-                Color::rgb(0.2, 0.3, 0.4),    // 深灰蓝
-                Color::rgb(0.8, 0.3, 0.1),    // 橙红
-                Color::rgb(0.3, 0.5, 0.2),    // 深绿
-                Color::rgb(0.5, 0.2, 0.4),    // 紫色
-                Color::rgb(0.7, 0.6, 0.1),    // 金黄
-                Color::rgb(0.4, 0.6, 0.7),    // 钢蓝
+                Color::rgb(0.2, 0.3, 0.4), // 深灰蓝
+                Color::rgb(0.8, 0.3, 0.1), // 橙红
+                Color::rgb(0.3, 0.5, 0.2), // 深绿
+                Color::rgb(0.5, 0.2, 0.4), // 紫色
+                Color::rgb(0.7, 0.6, 0.1), // 金黄
+                Color::rgb(0.4, 0.6, 0.7), // 钢蓝
             ]);
 
         Self::create_theme_from_palette("business", "商业主题", palette)
@@ -80,12 +80,12 @@ impl ThemePresets {
             .with_background(Color::rgb(0.98, 1.0, 0.99))
             .with_text(Color::rgb(0.1, 0.2, 0.1))
             .with_series(vec![
-                Color::rgb(0.2, 0.6, 0.4),    // 医疗绿
-                Color::rgb(0.1, 0.5, 0.3),    // 深绿
-                Color::rgb(0.3, 0.7, 0.5),    // 浅绿
-                Color::rgb(0.4, 0.8, 0.6),    // 薄荷绿
-                Color::rgb(0.0, 0.4, 0.2),    // 森林绿
-                Color::rgb(0.5, 0.9, 0.7),    // 春绿
+                Color::rgb(0.2, 0.6, 0.4), // 医疗绿
+                Color::rgb(0.1, 0.5, 0.3), // 深绿
+                Color::rgb(0.3, 0.7, 0.5), // 浅绿
+                Color::rgb(0.4, 0.8, 0.6), // 薄荷绿
+                Color::rgb(0.0, 0.4, 0.2), // 森林绿
+                Color::rgb(0.5, 0.9, 0.7), // 春绿
             ]);
 
         Self::create_theme_from_palette("medical", "医疗主题", palette)
@@ -100,12 +100,12 @@ impl ThemePresets {
             .with_background(Color::rgb(1.0, 0.99, 0.97))
             .with_text(Color::rgb(0.2, 0.1, 0.0))
             .with_series(vec![
-                Color::rgb(0.8, 0.5, 0.2),    // 橙色
-                Color::rgb(0.7, 0.3, 0.4),    // 暖红
-                Color::rgb(0.6, 0.4, 0.7),    // 紫色
-                Color::rgb(0.3, 0.6, 0.5),    // 青绿
-                Color::rgb(0.9, 0.7, 0.3),    // 金黄
-                Color::rgb(0.5, 0.5, 0.8),    // 淡紫
+                Color::rgb(0.8, 0.5, 0.2), // 橙色
+                Color::rgb(0.7, 0.3, 0.4), // 暖红
+                Color::rgb(0.6, 0.4, 0.7), // 紫色
+                Color::rgb(0.3, 0.6, 0.5), // 青绿
+                Color::rgb(0.9, 0.7, 0.3), // 金黄
+                Color::rgb(0.5, 0.5, 0.8), // 淡紫
             ]);
 
         Self::create_theme_from_palette("education", "教育主题", palette)
@@ -120,12 +120,12 @@ impl ThemePresets {
             .with_background(Color::rgb(1.0, 1.0, 1.0))
             .with_text(Color::rgb(0.0, 0.0, 0.0))
             .with_series(vec![
-                Color::rgb(0.0, 0.0, 0.0),    // 黑色
-                Color::rgb(1.0, 0.0, 0.0),    // 红色
-                Color::rgb(0.0, 0.0, 1.0),    // 蓝色
-                Color::rgb(0.0, 0.8, 0.0),    // 绿色
-                Color::rgb(1.0, 0.0, 1.0),    // 品红
-                Color::rgb(1.0, 1.0, 0.0),    // 黄色
+                Color::rgb(0.0, 0.0, 0.0), // 黑色
+                Color::rgb(1.0, 0.0, 0.0), // 红色
+                Color::rgb(0.0, 0.0, 1.0), // 蓝色
+                Color::rgb(0.0, 0.8, 0.0), // 绿色
+                Color::rgb(1.0, 0.0, 1.0), // 品红
+                Color::rgb(1.0, 1.0, 0.0), // 黄色
             ]);
 
         Self::create_theme_from_palette("high_contrast", "高对比度主题", palette)
@@ -160,12 +160,12 @@ impl ThemePresets {
             .with_background(Color::rgb(1.0, 1.0, 1.0))
             .with_text(Color::rgb(0.0, 0.0, 0.0))
             .with_series(vec![
-                Color::rgb(0.1, 0.1, 0.1),    // 深灰
-                Color::rgb(0.3, 0.3, 0.3),    // 中深灰
-                Color::rgb(0.5, 0.5, 0.5),    // 中灰
-                Color::rgb(0.7, 0.7, 0.7),    // 浅灰
-                Color::rgb(0.9, 0.9, 0.9),    // 很浅灰
-                Color::rgb(0.0, 0.0, 0.0),    // 黑色
+                Color::rgb(0.1, 0.1, 0.1), // 深灰
+                Color::rgb(0.3, 0.3, 0.3), // 中深灰
+                Color::rgb(0.5, 0.5, 0.5), // 中灰
+                Color::rgb(0.7, 0.7, 0.7), // 浅灰
+                Color::rgb(0.9, 0.9, 0.9), // 很浅灰
+                Color::rgb(0.0, 0.0, 0.0), // 黑色
             ]);
 
         Self::create_theme_from_palette("print_friendly", "打印友好主题", palette)
@@ -178,10 +178,22 @@ impl ThemePresets {
             .with_author("Vizuara Theme System");
 
         // 设置全局属性
-        theme.set_global(ThemeProperty::PrimaryColor, ThemeValue::Color(palette.primary));
-        theme.set_global(ThemeProperty::SecondaryColor, ThemeValue::Color(palette.secondary));
-        theme.set_global(ThemeProperty::AccentColor, ThemeValue::Color(palette.accent));
-        theme.set_global(ThemeProperty::BackgroundColor, ThemeValue::Color(palette.background));
+        theme.set_global(
+            ThemeProperty::PrimaryColor,
+            ThemeValue::Color(palette.primary),
+        );
+        theme.set_global(
+            ThemeProperty::SecondaryColor,
+            ThemeValue::Color(palette.secondary),
+        );
+        theme.set_global(
+            ThemeProperty::AccentColor,
+            ThemeValue::Color(palette.accent),
+        );
+        theme.set_global(
+            ThemeProperty::BackgroundColor,
+            ThemeValue::Color(palette.background),
+        );
         theme.set_global(ThemeProperty::TextColor, ThemeValue::Color(palette.text));
         theme.set_global(ThemeProperty::BorderColor, ThemeValue::Color(palette.text));
         theme.set_global(ThemeProperty::FontSize, ThemeValue::Number(12.0));
@@ -215,8 +227,7 @@ impl ThemePresets {
         theme.add_component(ComponentType::Histogram, histogram_theme);
 
         // 热力图主题
-        let heatmap_theme = ComponentTheme::new("Heatmap")
-            .with_primary_color(palette.primary);
+        let heatmap_theme = ComponentTheme::new("Heatmap").with_primary_color(palette.primary);
         theme.add_component(ComponentType::Heatmap, heatmap_theme);
 
         // 箱线图主题
@@ -233,8 +244,7 @@ impl ThemePresets {
         theme.add_component(ComponentType::Scatter3D, scatter3d_theme);
 
         // 3D表面图主题
-        let surface3d_theme = ComponentTheme::new("Surface3D")
-            .with_primary_color(palette.primary);
+        let surface3d_theme = ComponentTheme::new("Surface3D").with_primary_color(palette.primary);
         theme.add_component(ComponentType::Surface3D, surface3d_theme);
 
         // 坐标轴主题
@@ -246,10 +256,10 @@ impl ThemePresets {
         // 网格主题
         let grid_theme = ComponentTheme::new("Grid")
             .with_primary_color(Color::new(
-                palette.text.r, 
-                palette.text.g, 
-                palette.text.b, 
-                0.3
+                palette.text.r,
+                palette.text.g,
+                palette.text.b,
+                0.3,
             ))
             .with_line_width(0.5);
         theme.add_component(ComponentType::Grid, grid_theme);
@@ -262,22 +272,18 @@ impl ThemePresets {
         theme.add_component(ComponentType::Legend, legend_theme);
 
         // 标题主题
-        let title_theme = ComponentTheme::new("Title")
-            .with_primary_color(palette.text);
+        let title_theme = ComponentTheme::new("Title").with_primary_color(palette.text);
         theme.add_component(ComponentType::Title, title_theme);
 
         // 背景主题
-        let background_theme = ComponentTheme::new("Background")
-            .with_primary_color(palette.background);
+        let background_theme =
+            ComponentTheme::new("Background").with_primary_color(palette.background);
         theme.add_component(ComponentType::Background, background_theme);
 
         // 存储调色板信息到自定义属性
         theme.set_custom("palette_name", ThemeValue::String(palette.name.clone()));
         for (i, color) in palette.series.iter().enumerate() {
-            theme.set_custom(
-                format!("series_color_{}", i), 
-                ThemeValue::Color(*color)
-            );
+            theme.set_custom(format!("series_color_{}", i), ThemeValue::Color(*color));
         }
 
         theme
@@ -301,7 +307,7 @@ impl ThemePresets {
     /// 根据名称获取预设主题
     pub fn get_preset(name: &str) -> Option<Theme> {
         match name {
-            "default" => Some(Self::default()),
+            "default" => Some(Self::default_theme()),
             "dark" => Some(Self::dark()),
             "scientific" => Some(Self::scientific()),
             "business" => Some(Self::business()),
@@ -331,16 +337,18 @@ impl ThemePresets {
     }
 }
 
+// 重复的 Default 实现已移除（见文件上方的实现）
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_default_theme() {
-        let theme = ThemePresets::default();
+        let theme = ThemePresets::default_theme();
         assert_eq!(theme.name, "default");
         assert!(theme.validate().is_ok());
-        
+
         // 验证全局属性
         assert!(theme.get_global(&ThemeProperty::PrimaryColor).is_some());
         assert!(theme.get_global(&ThemeProperty::BackgroundColor).is_some());
@@ -352,7 +360,7 @@ mod tests {
         let theme = ThemePresets::dark();
         assert_eq!(theme.name, "dark");
         assert!(theme.validate().is_ok());
-        
+
         // 深色主题的背景应该是深色
         let bg_color = theme.get_background_color();
         assert!(bg_color.r < 0.5 && bg_color.g < 0.5 && bg_color.b < 0.5);
@@ -369,7 +377,7 @@ mod tests {
     #[test]
     fn test_component_themes() {
         let theme = ThemePresets::scientific();
-        
+
         // 验证组件主题存在
         assert!(theme.get_component(&ComponentType::ScatterPlot).is_some());
         assert!(theme.get_component(&ComponentType::LinePlot).is_some());
@@ -380,16 +388,16 @@ mod tests {
     #[test]
     fn test_high_contrast_theme() {
         let theme = ThemePresets::high_contrast();
-        
+
         // 高对比度主题应该使用黑白颜色
         let primary = theme.get_primary_color(&ComponentType::ScatterPlot);
         let background = theme.get_background_color();
-        
+
         // 计算对比度（简化检查）
         let primary_luminance = 0.299 * primary.r + 0.587 * primary.g + 0.114 * primary.b;
         let bg_luminance = 0.299 * background.r + 0.587 * background.g + 0.114 * background.b;
         let contrast = (primary_luminance - bg_luminance).abs();
-        
+
         assert!(contrast > 0.5, "高对比度主题的对比度不足");
     }
 
@@ -397,7 +405,7 @@ mod tests {
     fn test_preset_names_and_descriptions() {
         let names = ThemePresets::list_preset_names();
         assert!(!names.is_empty());
-        
+
         for name in names {
             assert!(ThemePresets::get_preset(name).is_some());
             assert!(ThemePresets::get_theme_description(name).is_some());
@@ -407,18 +415,25 @@ mod tests {
     #[test]
     fn test_colorblind_friendly_palette() {
         let theme = ThemePresets::colorblind_friendly();
-        
+
         // 色盲友好主题应该避免红绿组合
-        let series_colors = (0..6).map(|i| 
-            theme.get_custom(&format!("series_color_{}", i))
-                .and_then(|v| v.as_color())
-                .unwrap_or(Color::rgb(0.0, 0.0, 0.0))
-        ).collect::<Vec<_>>();
-        
+        let series_colors = (0..6)
+            .map(|i| {
+                theme
+                    .get_custom(&format!("series_color_{}", i))
+                    .and_then(|v| v.as_color())
+                    .unwrap_or(Color::rgb(0.0, 0.0, 0.0))
+            })
+            .collect::<Vec<_>>();
+
         // 应该包含蓝色和橙色（色盲友好的对比色）
-        let has_blue = series_colors.iter().any(|c| c.b > 0.5 && c.r < 0.3 && c.g < 0.6);
-        let has_orange = series_colors.iter().any(|c| c.r > 0.6 && c.g > 0.3 && c.b < 0.3);
-        
+        let has_blue = series_colors
+            .iter()
+            .any(|c| c.b > 0.5 && c.r < 0.3 && c.g < 0.6);
+        let has_orange = series_colors
+            .iter()
+            .any(|c| c.r > 0.6 && c.g > 0.3 && c.b < 0.3);
+
         assert!(has_blue, "色盲友好主题应该包含蓝色");
         assert!(has_orange, "色盲友好主题应该包含橙色");
     }
@@ -426,14 +441,16 @@ mod tests {
     #[test]
     fn test_print_friendly_grayscale() {
         let theme = ThemePresets::print_friendly();
-        
+
         // 打印友好主题应该使用灰度色彩
         let primary = theme.get_primary_color(&ComponentType::ScatterPlot);
         let tolerance = 0.1;
-        
+
         assert!(
             (primary.r - primary.g).abs() < tolerance && (primary.g - primary.b).abs() < tolerance,
             "打印友好主题应该使用灰度颜色"
         );
     }
 }
+
+// 注意：Theme 的 Default 实现在文件上方，避免出现在测试模块之后

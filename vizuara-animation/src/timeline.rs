@@ -1,4 +1,4 @@
-use crate::{Transition, AnimationState};
+use crate::{AnimationState, Transition};
 use std::time::{Duration, Instant};
 
 /// 时间轴 - 管理多个动画的同步播放
@@ -76,7 +76,7 @@ impl Timeline {
                 } else {
                     0.0
                 }
-            },
+            }
             AnimationState::Playing => {
                 if let Some(start) = self.start_time {
                     let elapsed = start.elapsed();
@@ -109,7 +109,7 @@ impl Timeline {
     pub fn seek(&mut self, progress: f32) {
         let progress = progress.clamp(0.0, 1.0);
         let target_time = Duration::from_secs_f32(progress * self.duration.as_secs_f32());
-        
+
         if self.state == AnimationState::Playing {
             self.start_time = Some(Instant::now() - target_time);
         } else {
@@ -132,7 +132,7 @@ pub struct AnimationSequence<T> {
     timeline: Timeline,
 }
 
-impl<T> AnimationSequence<T> 
+impl<T> AnimationSequence<T>
 where
     T: Clone,
 {
@@ -147,13 +147,15 @@ where
     /// 添加动画
     pub fn add_animation(mut self, start_time: Duration, animation: Transition<T>) -> Self {
         self.animations.push((start_time, animation));
-        
+
         // 更新总时长
-        let total_duration = self.animations.iter()
+        let total_duration = self
+            .animations
+            .iter()
             .map(|(start, anim)| *start + anim.duration())
             .max()
             .unwrap_or(Duration::ZERO);
-        
+
         self.timeline = Timeline::new(total_duration);
         self
     }
@@ -167,7 +169,7 @@ where
     /// 开始序列
     pub fn start(&mut self) {
         self.timeline.start();
-        
+
         // 初始化所有动画
         for (_, animation) in &mut self.animations {
             animation.stop();
@@ -201,10 +203,10 @@ where
     /// 更新序列状态
     pub fn update(&mut self) {
         self.timeline.update();
-        
+
         if self.timeline.state() == AnimationState::Playing {
             let current_time = self.timeline.current_time();
-            
+
             for (start_time, animation) in &mut self.animations {
                 if current_time >= *start_time {
                     // 应该开始这个动画
@@ -220,13 +222,15 @@ where
     /// 获取当前活跃的动画值
     pub fn current_values(&self, lerp_fn: impl Fn(&T, &T, f32) -> T + Copy) -> Vec<T> {
         let mut values = Vec::new();
-        
+
         for (_, animation) in &self.animations {
-            if animation.state() == AnimationState::Playing || animation.state() == AnimationState::Completed {
+            if animation.state() == AnimationState::Playing
+                || animation.state() == AnimationState::Completed
+            {
                 values.push(animation.current_value(lerp_fn));
             }
         }
-        
+
         values
     }
 
@@ -330,7 +334,8 @@ where
 
     /// 获取所有当前值
     pub fn current_values(&self, lerp_fn: impl Fn(&T, &T, f32) -> T + Copy) -> Vec<T> {
-        self.animations.iter()
+        self.animations
+            .iter()
             .map(|anim| anim.current_value(lerp_fn))
             .collect()
     }
@@ -378,7 +383,7 @@ mod tests {
 
         // 等待一段时间
         thread::sleep(Duration::from_millis(50));
-        
+
         let progress = timeline.progress();
         assert!(progress > 0.0 && progress < 1.0);
 
@@ -400,7 +405,7 @@ mod tests {
 
         // 跳转到50%
         timeline.seek(0.5);
-        
+
         let progress = timeline.progress();
         assert!((progress - 0.5).abs() < 0.1);
     }
@@ -409,7 +414,12 @@ mod tests {
     fn test_animation_sequence() {
         let mut sequence = AnimationSequence::new()
             .at(Duration::ZERO, 0.0f32, 50.0f32, Duration::from_millis(100))
-            .at(Duration::from_millis(100), 50.0f32, 100.0f32, Duration::from_millis(100));
+            .at(
+                Duration::from_millis(100),
+                50.0f32,
+                100.0f32,
+                Duration::from_millis(100),
+            );
 
         assert_eq!(sequence.animation_count(), 2);
         assert_eq!(sequence.state(), AnimationState::NotStarted);
@@ -460,19 +470,24 @@ mod tests {
     fn test_sequence_timing() {
         let mut sequence = AnimationSequence::new()
             .at(Duration::ZERO, 0.0f32, 10.0f32, Duration::from_millis(50))
-            .at(Duration::from_millis(50), 10.0f32, 20.0f32, Duration::from_millis(50));
+            .at(
+                Duration::from_millis(50),
+                10.0f32,
+                20.0f32,
+                Duration::from_millis(50),
+            );
 
         sequence.start();
-        
+
         // 在开始时，应该只有第一个动画活跃
         sequence.update();
         let _values = sequence.current_values(|from, to, t| from + (to - from) * t);
         // 注意：可能没有值，因为动画刚开始
-        
+
         // 等待第一个动画完成
         thread::sleep(Duration::from_millis(60));
         sequence.update();
-        
+
         let values = sequence.current_values(|from, to, t| from + (to - from) * t);
         // 现在应该有值了
         assert!(!values.is_empty());
@@ -485,14 +500,14 @@ mod tests {
             .add_simple(200.0f32, 300.0f32, Duration::from_millis(50));
 
         parallel.start();
-        
+
         // 初始时不应该全部完成
         assert!(!parallel.all_completed());
-        
+
         // 等待完成
         thread::sleep(Duration::from_millis(60));
         parallel.update();
-        
+
         // 现在应该全部完成
         assert!(parallel.all_completed());
     }
@@ -501,10 +516,10 @@ mod tests {
     fn test_timeline_current_time() {
         let mut timeline = Timeline::new(Duration::from_millis(1000));
         timeline.start();
-        
+
         // 模拟50%进度
         timeline.seek(0.5);
-        
+
         let current_time = timeline.current_time();
         assert!((current_time.as_millis() as f32 - 500.0).abs() < 50.0);
     }

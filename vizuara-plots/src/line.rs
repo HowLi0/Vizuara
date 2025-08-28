@@ -1,5 +1,5 @@
-use vizuara_core::{Primitive, Color, Scale, LinearScale};
 use nalgebra::Point2;
+use vizuara_core::{Color, LinearScale, Primitive, Scale};
 
 /// 折线图数据点（重用 scatter 的 DataPoint）
 pub use crate::scatter::DataPoint;
@@ -50,23 +50,28 @@ impl LinePlot {
     pub fn data<T: Into<DataPoint> + Clone>(mut self, data: &[T]) -> Self {
         self.data = data.iter().cloned().map(|d| d.into()).collect();
         // 按 X 坐标排序，确保线条连接正确
-        self.data.sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap_or(std::cmp::Ordering::Equal));
+        self.data
+            .sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap_or(std::cmp::Ordering::Equal));
         self
     }
 
     /// 从两个向量设置 X 和 Y 数据
     pub fn xy_data(mut self, x_data: &[f32], y_data: &[f32]) -> Self {
-        assert_eq!(x_data.len(), y_data.len(), "X and Y data must have the same length");
-        
+        assert_eq!(
+            x_data.len(),
+            y_data.len(),
+            "X and Y data must have the same length"
+        );
+
         let mut combined: Vec<_> = x_data
             .iter()
             .zip(y_data.iter())
             .map(|(&x, &y)| DataPoint::new(x, y))
             .collect();
-        
+
         // 按 X 坐标排序
         combined.sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap_or(std::cmp::Ordering::Equal));
-        
+
         self.data = combined;
         self
     }
@@ -118,7 +123,7 @@ impl LinePlot {
         if !self.data.is_empty() {
             let x_values: Vec<f32> = self.data.iter().map(|p| p.x).collect();
             let y_values: Vec<f32> = self.data.iter().map(|p| p.y).collect();
-            
+
             self.x_scale = Some(LinearScale::from_data(&x_values));
             self.y_scale = Some(LinearScale::from_data(&y_values));
         }
@@ -140,7 +145,7 @@ impl LinePlot {
             let x_values: Vec<f32> = self.data.iter().map(|p| p.x).collect();
             LinearScale::from_data(&x_values)
         };
-        
+
         let y_scale = if let Some(ref scale) = self.y_scale {
             scale.clone()
         } else {
@@ -155,12 +160,12 @@ impl LinePlot {
             .map(|point| {
                 let x_norm = x_scale.normalize(point.x);
                 let y_norm = y_scale.normalize(point.y);
-                
+
                 // 将归一化坐标映射到绘图区域
                 let screen_x = plot_area.x + x_norm * plot_area.width;
                 // Y轴翻转：屏幕坐标系是从上到下，而数据坐标系是从下到上
                 let screen_y = plot_area.y + plot_area.height - y_norm * plot_area.height;
-                
+
                 Point2::new(screen_x, screen_y)
             })
             .collect();
@@ -191,10 +196,7 @@ impl LinePlot {
             max_y = max_y.max(point.y);
         }
 
-        Some((
-            DataPoint::new(min_x, min_y),
-            DataPoint::new(max_x, max_y),
-        ))
+        Some((DataPoint::new(min_x, min_y), DataPoint::new(max_x, max_y)))
     }
 
     /// 获取数据点数量
@@ -223,9 +225,9 @@ mod tests {
     fn test_line_plot_with_data() {
         let data = vec![(1.0, 2.0), (3.0, 1.0), (2.0, 3.0)]; // 故意乱序
         let plot = LinePlot::new().data(&data);
-        
+
         assert_eq!(plot.data_len(), 3);
-        
+
         // 验证数据已按 X 坐标排序
         assert_eq!(plot.data[0].x, 1.0);
         assert_eq!(plot.data[1].x, 2.0);
@@ -237,9 +239,9 @@ mod tests {
         let x_data = vec![3.0, 1.0, 2.0]; // 故意乱序
         let y_data = vec![6.0, 2.0, 4.0];
         let plot = LinePlot::new().xy_data(&x_data, &y_data);
-        
+
         assert_eq!(plot.data_len(), 3);
-        
+
         // 验证数据已按 X 坐标排序
         assert_eq!(plot.data[0].x, 1.0);
         assert_eq!(plot.data[0].y, 2.0);
@@ -253,7 +255,7 @@ mod tests {
     fn test_line_plot_bounds() {
         let data = vec![(1.0, 2.0), (3.0, 4.0), (0.0, 1.0)];
         let plot = LinePlot::new().data(&data);
-        
+
         let bounds = plot.data_bounds().unwrap();
         assert_eq!(bounds.0.x, 0.0);
         assert_eq!(bounds.0.y, 1.0);
@@ -265,12 +267,12 @@ mod tests {
     fn test_line_plot_primitive_generation() {
         let data = vec![(1.0, 2.0), (2.0, 3.0), (3.0, 1.0)];
         let plot = LinePlot::new().data(&data).auto_scale();
-        
+
         let plot_area = crate::PlotArea::new(100.0, 100.0, 400.0, 300.0);
         let primitives = plot.generate_primitives(plot_area);
-        
+
         assert_eq!(primitives.len(), 1); // 应该有一个 LineStrip 图元
-        
+
         match &primitives[0] {
             Primitive::LineStrip(points) => {
                 assert_eq!(points.len(), 3); // 3个点的线条
@@ -283,10 +285,10 @@ mod tests {
     fn test_line_plot_insufficient_data() {
         // 测试数据点不足的情况
         let plot = LinePlot::new().data(&[(1.0, 2.0)]);
-        
+
         let plot_area = crate::PlotArea::new(100.0, 100.0, 400.0, 300.0);
         let primitives = plot.generate_primitives(plot_area);
-        
+
         assert_eq!(primitives.len(), 0); // 少于2个点，不应该生成线条
     }
 
@@ -296,7 +298,7 @@ mod tests {
             .color(Color::rgb(1.0, 0.0, 0.0))
             .line_width(3.0)
             .line_style(vizuara_core::LineStyle::Dashed);
-        
+
         assert_eq!(plot.style.color, Color::rgb(1.0, 0.0, 0.0));
         assert_eq!(plot.style.width, 3.0);
         assert_eq!(plot.style.style, vizuara_core::LineStyle::Dashed);

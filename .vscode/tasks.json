@@ -63,6 +63,99 @@
 			"type": "shell",
 			"command": "cargo run -p vizuara-examples --bin theme_visual_demo",
 			"group": "build"
+		},
+		{
+			"label": "cargo-run-export-demo",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin export_demo",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-gui-demo-enhanced",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin gui_demo_enhanced",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-gui-demo-comprehensive",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin gui_demo_comprehensive",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-gui-demo-simple",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin gui_demo_simple",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-gui-demo-full",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin gui_demo_full",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-egui-2d-step1",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin egui_2d_step1",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-egui-2d-step1",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin egui_2d_step1",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-egui-2d-step1",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin egui_2d_step1",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-egui-2d-step1",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin egui_2d_step1",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-gui-demo-integrated",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin gui_demo_integrated",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-gui-demo-integrated",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin gui_demo_integrated",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-gui-demo-integrated-retry",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin gui_demo_integrated",
+			"group": "build"
 		}
 	]
 }

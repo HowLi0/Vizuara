@@ -1,6 +1,6 @@
-use winit::event::{MouseButton, ElementState};
 use nalgebra::Point2;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use winit::event::{ElementState, MouseButton};
 
 /// 鼠标事件类型
 #[derive(Debug, Clone, PartialEq)]
@@ -21,9 +21,9 @@ pub enum MouseEventType {
 pub struct MouseEvent {
     pub event_type: MouseEventType,
     pub button: Option<MouseButton>,
-    pub position: Point2<f32>,  // 屏幕坐标
-    pub data_position: Option<Point2<f32>>,  // 数据坐标（如果在绘图区域内）
-    pub delta: Option<Point2<f32>>,  // 移动或滚轮增量
+    pub position: Point2<f32>,              // 屏幕坐标
+    pub data_position: Option<Point2<f32>>, // 数据坐标（如果在绘图区域内）
+    pub delta: Option<Point2<f32>>,         // 移动或滚轮增量
     pub modifiers: KeyModifiers,
 }
 
@@ -33,7 +33,7 @@ pub struct KeyModifiers {
     pub shift: bool,
     pub ctrl: bool,
     pub alt: bool,
-    pub meta: bool,  // Windows 键或 Mac Cmd 键
+    pub meta: bool, // Windows 键或 Mac Cmd 键
 }
 
 /// 交互事件
@@ -107,13 +107,13 @@ impl MouseEvent {
 
     /// 是否是左键点击
     pub fn is_left_click(&self) -> bool {
-        matches!(self.event_type, MouseEventType::Click) 
+        matches!(self.event_type, MouseEventType::Click)
             && matches!(self.button, Some(MouseButton::Left))
     }
 
     /// 是否是右键点击
     pub fn is_right_click(&self) -> bool {
-        matches!(self.event_type, MouseEventType::Click) 
+        matches!(self.event_type, MouseEventType::Click)
             && matches!(self.button, Some(MouseButton::Right))
     }
 
@@ -124,8 +124,10 @@ impl MouseEvent {
 
     /// 是否在指定区域内
     pub fn is_in_bounds(&self, min: Point2<f32>, max: Point2<f32>) -> bool {
-        self.position.x >= min.x && self.position.x <= max.x
-            && self.position.y >= min.y && self.position.y <= max.y
+        self.position.x >= min.x
+            && self.position.x <= max.x
+            && self.position.y >= min.y
+            && self.position.y <= max.y
     }
 }
 
@@ -176,15 +178,17 @@ impl KeyModifiers {
 pub trait EventHandler {
     /// 处理鼠标事件
     fn handle_mouse_event(&mut self, event: &MouseEvent) -> bool;
-    
+
     /// 处理键盘事件
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent) -> bool;
-    
+
     /// 处理交互事件
     fn handle_interaction_event(&mut self, event: &InteractionEvent) -> bool {
         match event {
             InteractionEvent::Mouse(mouse_event) => self.handle_mouse_event(mouse_event),
-            InteractionEvent::Keyboard(keyboard_event) => self.handle_keyboard_event(keyboard_event),
+            InteractionEvent::Keyboard(keyboard_event) => {
+                self.handle_keyboard_event(keyboard_event)
+            }
             InteractionEvent::Touch(_) => false, // 暂不处理触摸事件
         }
     }
@@ -222,9 +226,7 @@ mod tests {
 
     #[test]
     fn test_key_modifiers() {
-        let modifiers = KeyModifiers::new()
-            .with_shift(true)
-            .with_ctrl(false);
+        let modifiers = KeyModifiers::new().with_shift(true).with_ctrl(false);
 
         assert!(modifiers.shift);
         assert!(!modifiers.ctrl);
@@ -238,7 +240,8 @@ mod tests {
             MouseEventType::Drag,
             Point2::new(100.0, 100.0),
             Some(MouseButton::Left),
-        ).with_delta(Point2::new(10.0, -5.0));
+        )
+        .with_delta(Point2::new(10.0, -5.0));
 
         assert!(event.is_drag());
         assert_eq!(event.delta, Some(Point2::new(10.0, -5.0)));

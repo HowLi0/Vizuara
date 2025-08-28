@@ -1,15 +1,15 @@
 //! 窗口管理模块
-//! 
+//!
 //! 提供跨平台窗口创建和事件处理
 
-pub mod window;
 pub mod event;
 pub mod figure_window;
+pub mod window;
 pub mod window_3d;
 
-pub use window::VizuaraWindow;
 pub use event::*;
 pub use figure_window::FigureWindow;
+pub use window::VizuaraWindow;
 pub use window_3d::Window3D;
 
 use vizuara_scene::Figure;

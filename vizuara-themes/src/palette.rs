@@ -1,9 +1,9 @@
+use crate::{ThemeError, ThemeResult};
 use serde::{Deserialize, Serialize};
 use vizuara_core::Color;
-use crate::{ThemeResult, ThemeError};
 
 /// 颜色调色板
-/// 
+///
 /// 定义一组相关的颜色，用于创建和谐的视觉主题
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ColorPalette {
@@ -52,12 +52,12 @@ impl ColorPalette {
             success: Color::rgb(0.2, 0.8, 0.3),
             info: Color::rgb(0.2, 0.6, 0.9),
             series: vec![
-                Color::rgb(0.2, 0.6, 0.8),  // 蓝色
-                Color::rgb(0.8, 0.4, 0.2),  // 橙色
-                Color::rgb(0.2, 0.8, 0.3),  // 绿色
-                Color::rgb(0.9, 0.2, 0.5),  // 红色
-                Color::rgb(0.6, 0.2, 0.8),  // 紫色
-                Color::rgb(0.8, 0.8, 0.2),  // 黄色
+                Color::rgb(0.2, 0.6, 0.8), // 蓝色
+                Color::rgb(0.8, 0.4, 0.2), // 橙色
+                Color::rgb(0.2, 0.8, 0.3), // 绿色
+                Color::rgb(0.9, 0.2, 0.5), // 红色
+                Color::rgb(0.6, 0.2, 0.8), // 紫色
+                Color::rgb(0.8, 0.8, 0.2), // 黄色
             ],
         }
     }
@@ -127,7 +127,7 @@ impl ColorPalette {
         }
 
         let mut colors = Vec::with_capacity(steps);
-        
+
         for i in 0..steps {
             let t = i as f32 / (steps - 1) as f32;
             let r = from.r + (to.r - from.r) * t;
@@ -160,21 +160,21 @@ impl ColorPalette {
         let blue_to_green = self.generate_gradient(
             Color::rgb(0.0, 0.0, 1.0),
             Color::rgb(0.0, 1.0, 0.0),
-            segment_size + if remainder > 0 { 1 } else { 0 }
+            segment_size + if remainder > 0 { 1 } else { 0 },
         );
 
         // 绿色到黄色
         let green_to_yellow = self.generate_gradient(
             Color::rgb(0.0, 1.0, 0.0),
             Color::rgb(1.0, 1.0, 0.0),
-            segment_size + if remainder > 1 { 1 } else { 0 }
+            segment_size + if remainder > 1 { 1 } else { 0 },
         );
 
         // 黄色到红色
         let yellow_to_red = self.generate_gradient(
             Color::rgb(1.0, 1.0, 0.0),
             Color::rgb(1.0, 0.0, 0.0),
-            segment_size
+            segment_size,
         );
 
         colors.extend(blue_to_green);
@@ -197,7 +197,7 @@ impl ColorPalette {
         }
 
         let mut colors = Vec::new();
-        
+
         // 首先使用预定义的系列颜色
         for i in 0..count {
             if i < self.series.len() {
@@ -216,7 +216,7 @@ impl ColorPalette {
     pub fn get_contrast_color(&self, background: Color) -> Color {
         // 计算背景亮度
         let luminance = 0.299 * background.r + 0.587 * background.g + 0.114 * background.b;
-        
+
         // 根据亮度选择对比色
         if luminance > 0.5 {
             Color::rgb(0.0, 0.0, 0.0) // 深色文本
@@ -249,9 +249,12 @@ impl ColorPalette {
     /// 从十六进制字符串解析颜色
     pub fn parse_hex_color(hex: &str) -> ThemeResult<Color> {
         let hex = hex.trim_start_matches('#');
-        
+
         if hex.len() != 6 && hex.len() != 8 {
-            return Err(ThemeError::InvalidColor(format!("无效的十六进制颜色: {}", hex)));
+            return Err(ThemeError::InvalidColor(format!(
+                "无效的十六进制颜色: {}",
+                hex
+            )));
         }
 
         let r = u8::from_str_radix(&hex[0..2], 16)
@@ -262,8 +265,9 @@ impl ColorPalette {
             .map_err(|_| ThemeError::InvalidColor(format!("无效的蓝色分量: {}", &hex[4..6])))?;
 
         let a = if hex.len() == 8 {
-            u8::from_str_radix(&hex[6..8], 16)
-                .map_err(|_| ThemeError::InvalidColor(format!("无效的透明度分量: {}", &hex[6..8])))?
+            u8::from_str_radix(&hex[6..8], 16).map_err(|_| {
+                ThemeError::InvalidColor(format!("无效的透明度分量: {}", &hex[6..8]))
+            })?
         } else {
             255
         };
@@ -337,11 +341,8 @@ mod tests {
     #[test]
     fn test_gradient_generation() {
         let palette = ColorPalette::new("Test", "Test");
-        let gradient = palette.generate_gradient(
-            Color::rgb(0.0, 0.0, 0.0),
-            Color::rgb(1.0, 1.0, 1.0),
-            3
-        );
+        let gradient =
+            palette.generate_gradient(Color::rgb(0.0, 0.0, 0.0), Color::rgb(1.0, 1.0, 1.0), 3);
 
         assert_eq!(gradient.len(), 3);
         assert_eq!(gradient[0], Color::rgb(0.0, 0.0, 0.0));
@@ -370,25 +371,34 @@ mod tests {
             palette.color_to_hex(Color::new(1.0, 0.0, 0.0, 1.0)),
             "#FF0000FF"
         );
-        
+
         // 使用稍微调整的值来避免浮点精度问题
-        let green_with_alpha = Color::new(0.0, 1.0, 0.0, 0.5019607843137255); // 128/255
+        let green_with_alpha = Color::new(0.0, 1.0, 0.0, 0.501_960_8); // 128/255
         let hex_result = palette.color_to_hex(green_with_alpha);
-        assert!(hex_result == "#00FF0080" || hex_result == "#00FF007F", 
-                "Expected #00FF0080 or #00FF007F, got {}", hex_result);
+        assert!(
+            hex_result == "#00FF0080" || hex_result == "#00FF007F",
+            "Expected #00FF0080 or #00FF007F, got {}",
+            hex_result
+        );
     }
 
     #[test]
     fn test_contrast_color() {
         let palette = ColorPalette::new("Test", "Test");
-        
+
         // 深色背景应该返回浅色文本
         let dark_bg = Color::rgb(0.1, 0.1, 0.1);
-        assert_eq!(palette.get_contrast_color(dark_bg), Color::rgb(1.0, 1.0, 1.0));
-        
+        assert_eq!(
+            palette.get_contrast_color(dark_bg),
+            Color::rgb(1.0, 1.0, 1.0)
+        );
+
         // 浅色背景应该返回深色文本
         let light_bg = Color::rgb(0.9, 0.9, 0.9);
-        assert_eq!(palette.get_contrast_color(light_bg), Color::rgb(0.0, 0.0, 0.0));
+        assert_eq!(
+            palette.get_contrast_color(light_bg),
+            Color::rgb(0.0, 0.0, 0.0)
+        );
     }
 
     #[test]
@@ -408,7 +418,7 @@ mod tests {
     fn test_categorical_palette() {
         let palette = ColorPalette::new("Test", "Test");
         let colors = palette.generate_categorical_palette(3);
-        
+
         assert_eq!(colors.len(), 3);
         // 前几个应该是预定义的系列颜色
         assert_eq!(colors[0], palette.series[0]);
@@ -420,7 +430,7 @@ mod tests {
     fn test_heatmap_palette() {
         let palette = ColorPalette::new("Test", "Test");
         let colors = palette.generate_heatmap_palette(10);
-        
+
         assert_eq!(colors.len(), 10);
         // 第一个应该偏蓝，最后一个应该偏红
         assert!(colors[0].b > colors[0].r);

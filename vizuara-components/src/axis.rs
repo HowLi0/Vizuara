@@ -1,5 +1,5 @@
-use vizuara_core::{Primitive, Scale, LinearScale, Color};
 use nalgebra::Point2;
+use vizuara_core::{Color, LinearScale, Primitive, Scale};
 
 /// 坐标轴方向
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -93,7 +93,7 @@ impl Axis {
         let ticks = self.scale.ticks(self.tick_count);
         for &tick_value in &ticks {
             let position = self.value_to_position(tick_value);
-            
+
             // 刻度线
             let (tick_start, tick_end) = self.tick_line_points(position);
             primitives.push(Primitive::Line {
@@ -109,8 +109,14 @@ impl Axis {
                 content: label_text,
                 size: self.style.label_size,
                 color: self.style.label_color,
-                h_align: match self.direction { AxisDirection::Horizontal => vizuara_core::HorizontalAlign::Center, AxisDirection::Vertical => vizuara_core::HorizontalAlign::Right },
-                v_align: match self.direction { AxisDirection::Horizontal => vizuara_core::VerticalAlign::Top, AxisDirection::Vertical => vizuara_core::VerticalAlign::Middle },
+                h_align: match self.direction {
+                    AxisDirection::Horizontal => vizuara_core::HorizontalAlign::Center,
+                    AxisDirection::Vertical => vizuara_core::HorizontalAlign::Right,
+                },
+                v_align: match self.direction {
+                    AxisDirection::Horizontal => vizuara_core::VerticalAlign::Top,
+                    AxisDirection::Vertical => vizuara_core::VerticalAlign::Middle,
+                },
             });
         }
 
@@ -122,8 +128,14 @@ impl Axis {
                 content: title.clone(),
                 size: self.style.title_size,
                 color: self.style.label_color,
-                h_align: match self.direction { AxisDirection::Horizontal => vizuara_core::HorizontalAlign::Center, AxisDirection::Vertical => vizuara_core::HorizontalAlign::Right },
-                v_align: match self.direction { AxisDirection::Horizontal => vizuara_core::VerticalAlign::Top, AxisDirection::Vertical => vizuara_core::VerticalAlign::Middle },
+                h_align: match self.direction {
+                    AxisDirection::Horizontal => vizuara_core::HorizontalAlign::Center,
+                    AxisDirection::Vertical => vizuara_core::HorizontalAlign::Right,
+                },
+                v_align: match self.direction {
+                    AxisDirection::Horizontal => vizuara_core::VerticalAlign::Top,
+                    AxisDirection::Vertical => vizuara_core::VerticalAlign::Middle,
+                },
             });
         }
 
@@ -134,14 +146,8 @@ impl Axis {
     fn axis_line_points(&self) -> (Point2<f32>, Point2<f32>) {
         let (x, y) = self.position;
         match self.direction {
-            AxisDirection::Horizontal => (
-                Point2::new(x, y),
-                Point2::new(x + self.length, y),
-            ),
-            AxisDirection::Vertical => (
-                Point2::new(x, y),
-                Point2::new(x, y + self.length),
-            ),
+            AxisDirection::Horizontal => (Point2::new(x, y), Point2::new(x + self.length, y)),
+            AxisDirection::Vertical => (Point2::new(x, y), Point2::new(x, y + self.length)),
         }
     }
 
@@ -187,7 +193,11 @@ impl Axis {
         match self.direction {
             AxisDirection::Horizontal => Point2::new(
                 self.position.0 + self.length / 2.0,
-                self.position.1 - self.style.tick_length - self.style.label_size - self.style.title_size - 10.0,
+                self.position.1
+                    - self.style.tick_length
+                    - self.style.label_size
+                    - self.style.title_size
+                    - 10.0,
             ),
             AxisDirection::Vertical => Point2::new(
                 self.position.0 - self.style.tick_length - 60.0,
@@ -204,12 +214,7 @@ mod tests {
     #[test]
     fn test_axis_creation() {
         let scale = LinearScale::new(0.0, 10.0);
-        let axis = Axis::new(
-            AxisDirection::Horizontal,
-            scale,
-            (100.0, 500.0),
-            400.0,
-        );
+        let axis = Axis::new(AxisDirection::Horizontal, scale, (100.0, 500.0), 400.0);
 
         assert_eq!(axis.direction, AxisDirection::Horizontal);
         assert_eq!(axis.position, (100.0, 500.0));
@@ -219,17 +224,12 @@ mod tests {
     #[test]
     fn test_primitive_generation() {
         let scale = LinearScale::new(0.0, 10.0);
-        let axis = Axis::new(
-            AxisDirection::Horizontal,
-            scale,
-            (100.0, 500.0),
-            400.0,
-        )
-        .title("X Axis")
-        .tick_count(5);
+        let axis = Axis::new(AxisDirection::Horizontal, scale, (100.0, 500.0), 400.0)
+            .title("X Axis")
+            .tick_count(5);
 
         let primitives = axis.generate_primitives();
-        
+
         // 应该包含：1个主轴线 + 5个刻度线 + 5个标签 + 1个标题 = 12个图元
         assert_eq!(primitives.len(), 12);
     }

@@ -1,6 +1,6 @@
-use vizuara_3d::{Scatter3D, Camera3D, Plot3DArea, Surface3D, Mesh3D};
-use vizuara_core::Color;
 use std::f32::consts::PI;
+use vizuara_3d::{Camera3D, Mesh3D, Plot3DArea, Scatter3D, Surface3D};
+use vizuara_core::Color;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -9,7 +9,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 创建3D散点数据
     println!("📈 生成3D散点数据...");
     let mut scatter_data = Vec::new();
-    
+
     // 螺旋形数据
     for i in 0..50 {
         let t = i as f32 * 0.3;
@@ -28,9 +28,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 创建3D表面数据 - 数学函数
     println!("🌊 生成3D表面数据...");
     let surface = Surface3D::from_function(
-        (-2.0, 2.0),  // X范围
-        (-2.0, 2.0),  // Y范围
-        (20, 20),     // 分辨率
+        (-2.0, 2.0), // X范围
+        (-2.0, 2.0), // Y范围
+        (20, 20),    // 分辨率
         |x, y| {
             // 波纹函数
             let r = (x * x + y * y).sqrt();
@@ -39,11 +39,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 (r * PI).sin() / r
             }
-        }
-    ).wireframe(true)
-     .wireframe_color(Color::rgb(0.2, 0.8, 0.2));
+        },
+    )
+    .wireframe(true)
+    .wireframe_color(Color::rgb(0.2, 0.8, 0.2));
 
-    println!("🕸️  表面网格: {}x{}", surface.mesh().width, surface.mesh().height);
+    println!(
+        "🕸️  表面网格: {}x{}",
+        surface.mesh().width,
+        surface.mesh().height
+    );
 
     // 创建3D网格 - 立方体
     println!("📦 创建3D立方体网格...");
@@ -65,16 +70,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .clip_planes(0.1, 100.0);
 
     // 创建3D绘图区域
-    let plot_area = Plot3DArea::new(
-        (-3.0, 3.0),
-        (-3.0, 3.0),
-        (-2.0, 3.0)
-    ).perspective(4.0 / 3.0, PI / 4.0, 0.1, 100.0)
-     .camera(
-         nalgebra::Point3::new(5.0, 5.0, 5.0),
-         nalgebra::Point3::new(0.0, 0.0, 0.0),
-         nalgebra::Vector3::new(0.0, 1.0, 0.0)
-     );
+    let plot_area = Plot3DArea::new((-3.0, 3.0), (-3.0, 3.0), (-2.0, 3.0))
+        .perspective(4.0 / 3.0, PI / 4.0, 0.1, 100.0)
+        .camera(
+            nalgebra::Point3::new(5.0, 5.0, 5.0),
+            nalgebra::Point3::new(0.0, 0.0, 0.0),
+            nalgebra::Vector3::new(0.0, 1.0, 0.0),
+        );
 
     println!("🖼️  生成3D渲染图元...");
 
@@ -97,29 +99,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 显示数据统计
     if let Some(bounds) = scatter3d.bounds() {
         println!("📏 散点数据边界:");
-        println!("   X: {:.2} ~ {:.2}", bounds.0.0, bounds.0.1);
-        println!("   Y: {:.2} ~ {:.2}", bounds.1.0, bounds.1.1);
-        println!("   Z: {:.2} ~ {:.2}", bounds.2.0, bounds.2.1);
+        println!("   X: {:.2} ~ {:.2}", bounds.0 .0, bounds.0 .1);
+        println!("   Y: {:.2} ~ {:.2}", bounds.1 .0, bounds.1 .1);
+        println!("   Z: {:.2} ~ {:.2}", bounds.2 .0, bounds.2 .1);
     }
 
     let surface_bounds = surface.mesh().bounds();
     println!("📏 表面数据边界:");
-    println!("   X: {:.2} ~ {:.2}", surface_bounds.0.0, surface_bounds.0.1);
-    println!("   Y: {:.2} ~ {:.2}", surface_bounds.1.0, surface_bounds.1.1);
-    println!("   Z: {:.2} ~ {:.2}", surface_bounds.2.0, surface_bounds.2.1);
+    println!(
+        "   X: {:.2} ~ {:.2}",
+        surface_bounds.0 .0, surface_bounds.0 .1
+    );
+    println!(
+        "   Y: {:.2} ~ {:.2}",
+        surface_bounds.1 .0, surface_bounds.1 .1
+    );
+    println!(
+        "   Z: {:.2} ~ {:.2}",
+        surface_bounds.2 .0, surface_bounds.2 .1
+    );
 
     if let Some(cube_bounds) = cube_mesh.bounds() {
         println!("📏 立方体边界:");
-        println!("   X: {:.2} ~ {:.2}", cube_bounds.0.0, cube_bounds.0.1);
-        println!("   Y: {:.2} ~ {:.2}", cube_bounds.1.0, cube_bounds.1.1);
-        println!("   Z: {:.2} ~ {:.2}", cube_bounds.2.0, cube_bounds.2.1);
+        println!("   X: {:.2} ~ {:.2}", cube_bounds.0 .0, cube_bounds.0 .1);
+        println!("   Y: {:.2} ~ {:.2}", cube_bounds.1 .0, cube_bounds.1 .1);
+        println!("   Z: {:.2} ~ {:.2}", cube_bounds.2 .0, cube_bounds.2 .1);
     }
 
     println!("🎯 3D可视化演示完成！");
-    println!("📊 总计生成了 {} 个图形元素", 
-        scatter_primitives.len() + surface_primitives.len() + 
-        cube_primitives.len() + sphere_primitives.len());
-    
+    println!(
+        "📊 总计生成了 {} 个图形元素",
+        scatter_primitives.len()
+            + surface_primitives.len()
+            + cube_primitives.len()
+            + sphere_primitives.len()
+    );
+
     println!("💡 3D功能说明:");
     println!("   • ✨ 3D散点图 - 支持螺旋和复杂数据");
     println!("   • 🌊 3D表面图 - 数学函数可视化");

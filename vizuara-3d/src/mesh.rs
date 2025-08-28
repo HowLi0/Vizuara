@@ -1,5 +1,6 @@
-use vizuara_core::{Primitive, Color};
-use nalgebra::{Point3, Vector3, Point2};
+use crate::BoundingBox3D;
+use nalgebra::{Point2, Point3, Vector3};
+use vizuara_core::{Color, Primitive};
 
 /// 3D 三角形面片
 #[derive(Debug, Clone)]
@@ -42,7 +43,7 @@ impl Triangle {
 #[derive(Debug, Clone)]
 pub struct Mesh3D {
     triangles: Vec<Triangle>,
-    bounding_box: Option<((f32, f32), (f32, f32), (f32, f32))>,
+    bounding_box: Option<BoundingBox3D>,
 }
 
 impl Mesh3D {
@@ -64,18 +65,16 @@ impl Mesh3D {
     pub fn from_vertices_indices(
         vertices: &[Point3<f32>],
         indices: &[usize],
-        color: Color
+        color: Color,
     ) -> Self {
         let mut mesh = Self::new();
 
         // 每3个索引组成一个三角形
         for chunk in indices.chunks(3) {
             if chunk.len() == 3 {
-                let triangle = Triangle::new(
-                    vertices[chunk[0]],
-                    vertices[chunk[1]],
-                    vertices[chunk[2]]
-                ).color(color);
+                let triangle =
+                    Triangle::new(vertices[chunk[0]], vertices[chunk[1]], vertices[chunk[2]])
+                        .color(color);
                 mesh = mesh.add_triangle(triangle);
             }
         }
@@ -86,33 +85,28 @@ impl Mesh3D {
     /// 创建立方体网格
     pub fn cube(size: f32) -> Self {
         let s = size / 2.0;
-        
+
         // 8个顶点
         let vertices = [
             Point3::new(-s, -s, -s), // 0
-            Point3::new( s, -s, -s), // 1
-            Point3::new( s,  s, -s), // 2
-            Point3::new(-s,  s, -s), // 3
-            Point3::new(-s, -s,  s), // 4
-            Point3::new( s, -s,  s), // 5
-            Point3::new( s,  s,  s), // 6
-            Point3::new(-s,  s,  s), // 7
+            Point3::new(s, -s, -s),  // 1
+            Point3::new(s, s, -s),   // 2
+            Point3::new(-s, s, -s),  // 3
+            Point3::new(-s, -s, s),  // 4
+            Point3::new(s, -s, s),   // 5
+            Point3::new(s, s, s),    // 6
+            Point3::new(-s, s, s),   // 7
         ];
 
         // 12个三角形 (每个面2个)
         let indices = [
             // 前面
-            0, 1, 2,  0, 2, 3,
-            // 后面  
-            4, 6, 5,  4, 7, 6,
-            // 左面
-            0, 3, 7,  0, 7, 4,
-            // 右面
-            1, 5, 6,  1, 6, 2,
-            // 上面
-            3, 2, 6,  3, 6, 7,
-            // 下面
-            0, 4, 5,  0, 5, 1,
+            0, 1, 2, 0, 2, 3, // 后面
+            4, 6, 5, 4, 7, 6, // 左面
+            0, 3, 7, 0, 7, 4, // 右面
+            1, 5, 6, 1, 6, 2, // 上面
+            3, 2, 6, 3, 6, 7, // 下面
+            0, 4, 5, 0, 5, 1,
         ];
 
         Self::from_vertices_indices(&vertices, &indices, Color::rgb(0.8, 0.8, 0.9))
@@ -122,19 +116,18 @@ impl Mesh3D {
     pub fn sphere(radius: f32, _subdivisions: usize) -> Self {
         // 简化版：创建八面体然后细分
         let vertices = [
-            Point3::new( 0.0,  radius,  0.0), // 顶点
-            Point3::new( 0.0, -radius,  0.0), // 底点
-            Point3::new( radius,  0.0,  0.0), // 前点
-            Point3::new(-radius,  0.0,  0.0), // 后点
-            Point3::new( 0.0,  0.0,  radius), // 右点
-            Point3::new( 0.0,  0.0, -radius), // 左点
+            Point3::new(0.0, radius, 0.0),  // 顶点
+            Point3::new(0.0, -radius, 0.0), // 底点
+            Point3::new(radius, 0.0, 0.0),  // 前点
+            Point3::new(-radius, 0.0, 0.0), // 后点
+            Point3::new(0.0, 0.0, radius),  // 右点
+            Point3::new(0.0, 0.0, -radius), // 左点
         ];
 
         let indices = [
             // 上半球
-            0, 2, 4,  0, 4, 3,  0, 3, 5,  0, 5, 2,
-            // 下半球
-            1, 4, 2,  1, 3, 4,  1, 5, 3,  1, 2, 5,
+            0, 2, 4, 0, 4, 3, 0, 3, 5, 0, 5, 2, // 下半球
+            1, 4, 2, 1, 3, 4, 1, 5, 3, 1, 2, 5,
         ];
 
         // TODO: 实现细分算法
@@ -147,7 +140,7 @@ impl Mesh3D {
     }
 
     /// 获取边界框
-    pub fn bounds(&self) -> Option<((f32, f32), (f32, f32), (f32, f32))> {
+    pub fn bounds(&self) -> Option<BoundingBox3D> {
         self.bounding_box
     }
 
@@ -160,8 +153,9 @@ impl Mesh3D {
     pub fn vertex_at(&self, index: usize) -> Option<Point3<f32>> {
         let triangle_index = index / 3;
         let vertex_index = index % 3;
-        
-        self.triangles.get(triangle_index)
+
+        self.triangles
+            .get(triangle_index)
             .map(|t| t.vertices[vertex_index])
     }
 
@@ -214,7 +208,7 @@ impl Mesh3D {
         for triangle in &self.triangles {
             // 投影三个顶点
             let mut screen_points = Vec::new();
-            
+
             for vertex in &triangle.vertices {
                 let world_pos = nalgebra::Vector4::new(vertex.x, vertex.y, vertex.z, 1.0);
                 let clip_pos = mvp * world_pos;
@@ -225,10 +219,10 @@ impl Mesh3D {
                     let ndc_z = clip_pos.z / clip_pos.w;
 
                     // 检查是否在视锥体内
-                    if ndc_x >= -1.0 && ndc_x <= 1.0 && 
-                       ndc_y >= -1.0 && ndc_y <= 1.0 && 
-                       ndc_z >= 0.0 && ndc_z <= 1.0 {
-                        
+                    if (-1.0..=1.0).contains(&ndc_x)
+                        && (-1.0..=1.0).contains(&ndc_y)
+                        && (0.0..=1.0).contains(&ndc_z)
+                    {
                         let screen_x = (ndc_x + 1.0) * 400.0;
                         let screen_y = (1.0 - ndc_y) * 300.0;
                         screen_points.push(Point2::new(screen_x, screen_y));
@@ -273,7 +267,7 @@ mod tests {
         let triangle = Triangle::new(
             Point3::new(0.0, 0.0, 0.0),
             Point3::new(1.0, 0.0, 0.0),
-            Point3::new(0.0, 1.0, 0.0)
+            Point3::new(0.0, 1.0, 0.0),
         );
 
         assert_eq!(triangle.vertices[0], Point3::new(0.0, 0.0, 0.0));
@@ -286,7 +280,7 @@ mod tests {
         let triangle = Triangle::new(
             Point3::new(0.0, 0.0, 0.0),
             Point3::new(3.0, 0.0, 0.0),
-            Point3::new(0.0, 3.0, 0.0)
+            Point3::new(0.0, 3.0, 0.0),
         );
 
         let centroid = triangle.centroid();
@@ -304,7 +298,7 @@ mod tests {
         let triangle = Triangle::new(
             Point3::new(0.0, 0.0, 0.0),
             Point3::new(1.0, 0.0, 0.0),
-            Point3::new(0.0, 1.0, 0.0)
+            Point3::new(0.0, 1.0, 0.0),
         );
 
         let mesh = Mesh3D::new().add_triangle(triangle);

@@ -1,6 +1,6 @@
-//! 
+//!
 //! Vizuara 动画系统
-//! 
+//!
 //! 提供高性能的动画功能，支持：
 //! - 缓动函数 (Easing functions)
 //! - 关键帧动画 (Keyframe animations)  
@@ -9,15 +9,15 @@
 //! - 时间轴管理 (Timeline management)
 //!
 
-pub mod timeline;
-pub mod transition;
 pub mod easing;
 pub mod keyframe;
+pub mod timeline;
+pub mod transition;
 
-pub use timeline::*;
-pub use transition::*;
 pub use easing::*;
 pub use keyframe::*;
+pub use timeline::*;
+pub use transition::*;
 
 use std::time::Duration;
 
@@ -38,13 +38,13 @@ pub enum AnimationState {
 pub trait Animatable {
     /// 动画数据类型
     type Value;
-    
+
     /// 获取当前值
     fn current_value(&self) -> Self::Value;
-    
+
     /// 设置当前值
     fn set_value(&mut self, value: Self::Value);
-    
+
     /// 线性插值
     fn lerp(&self, from: &Self::Value, to: &Self::Value, t: f32) -> Self::Value;
 }
@@ -131,7 +131,7 @@ mod tests {
     fn test_animation_state() {
         let state = AnimationState::NotStarted;
         assert_eq!(state, AnimationState::NotStarted);
-        
+
         let state = AnimationState::Playing;
         assert_eq!(state, AnimationState::Playing);
     }

@@ -1,0 +1,139 @@
+name: 🐛 Bug Report
+description: Report a bug to help us improve Vizuara
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您报告 Bug！请填写以下信息帮助我们快速定位和修复问题。
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: 前置检查
+      description: 请确认您已经完成以下检查
+      options:
+        - label: 我已经搜索了现有的 Issues，确认这不是重复报告
+          required: true
+        - label: 我已经阅读了最新的文档和 README
+          required: true
+        - label: 我使用的是最新版本的 Vizuara
+          required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug 描述
+      description: 清楚简洁地描述这个 Bug
+      placeholder: 描述您遇到的问题...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: 详细描述如何复现这个问题
+      placeholder: |
+        1. 执行操作 '...'
+        2. 点击 '....'
+        3. 滚动到 '....'
+        4. 看到错误
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 描述您期望发生的正确行为
+      placeholder: 应该发生什么...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 描述实际发生的错误行为
+      placeholder: 实际发生了什么...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境信息
+      description: 请提供您的运行环境信息
+      placeholder: |
+        - OS: [e.g. Ubuntu 22.04, Windows 11, macOS 13]
+        - Rust版本: [e.g. 1.75.0]
+        - Vizuara版本: [e.g. 0.3.1-alpha]
+        - GPU: [e.g. NVIDIA RTX 3060, Intel UHD Graphics]
+        - 显卡驱动版本: [e.g. 531.79]
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: code-sample
+    attributes:
+      label: 最小复现代码
+      description: 如果可能，请提供最小的代码示例来复现这个问题
+      placeholder: |
+        ```rust
+        use vizuara::*;
+        
+        fn main() {
+            // 您的代码...
+        }
+        ```
+      render: rust
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 错误日志
+      description: 请粘贴相关的错误信息或日志
+      placeholder: |
+        请设置 RUST_LOG=debug 环境变量并粘贴输出:
+        ```
+        错误信息...
+        ```
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 额外信息
+      description: 任何其他可能有助于解决问题的信息
+      placeholder: |
+        - 截图或录屏
+        - 相关配置文件
+        - 其他可能相关的信息
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 严重程度
+      description: 这个 Bug 对您的影响程度
+      options:
+        - Low - 轻微影响，有变通方案
+        - Medium - 中等影响，影响部分功能
+        - High - 严重影响，阻塞主要功能
+        - Critical - 致命影响，完全无法使用
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: 贡献意愿
+      description: 您是否愿意帮助修复这个问题？
+      options:
+        - label: 我愿意提交 PR 来修复这个问题
+        - label: 我可以协助测试修复方案
+        - label: 我可以提供更多测试用例

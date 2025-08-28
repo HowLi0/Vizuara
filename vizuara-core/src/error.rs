@@ -5,22 +5,22 @@ use thiserror::Error;
 pub enum VizuaraError {
     #[error("Invalid color format: {0}")]
     InvalidColor(String),
-    
+
     #[error("Invalid data: {0}")]
     InvalidData(String),
-    
+
     #[error("Rendering error: {0}")]
     RenderError(String),
-    
+
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
-    
+
     #[error("Configuration error: {0}")]
     ConfigError(String),
-    
+
     #[error("Unsupported feature: {0}")]
     UnsupportedFeature(String),
-    
+
     #[error("Interactive error: {0}")]
     InteractiveError(String),
 }

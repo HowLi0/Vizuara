@@ -1,5 +1,5 @@
-use vizuara_core::{Primitive, Color};
 use nalgebra::Point2;
+use vizuara_core::{Color, Primitive};
 
 /// 箱线图统计数据
 #[derive(Debug, Clone)]
@@ -36,7 +36,7 @@ impl BoxStatistics {
         data.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         let n = data.len();
-        
+
         // 计算四分位数
         let q1 = percentile(&data, 25.0);
         let median = percentile(&data, 50.0);
@@ -44,25 +44,28 @@ impl BoxStatistics {
 
         // 计算四分位距 (IQR)
         let iqr = q3 - q1;
-        
+
         // 计算须线范围 (1.5 * IQR)
         let lower_fence = q1 - 1.5 * iqr;
         let upper_fence = q3 + 1.5 * iqr;
 
         // 找到须线的实际端点 (在数据范围内)
-        let min = data.iter()
+        let min = data
+            .iter()
             .find(|&&x| x >= lower_fence)
             .copied()
             .unwrap_or(data[0]);
-        
-        let max = data.iter()
+
+        let max = data
+            .iter()
             .rev()
             .find(|&&x| x <= upper_fence)
             .copied()
             .unwrap_or(data[n - 1]);
 
         // 识别异常值
-        let outliers: Vec<f32> = data.iter()
+        let outliers: Vec<f32> = data
+            .iter()
             .filter(|&&x| x < lower_fence || x > upper_fence)
             .copied()
             .collect();
@@ -214,7 +217,8 @@ impl BoxPlot {
     /// 从多组原始数据创建箱线图
     pub fn from_data_groups(mut self, data_groups: &[(&str, Vec<f32>)]) -> Self {
         for (label, data) in data_groups {
-            self.groups.push(BoxPlotGroup::from_data(*label, data.clone()));
+            self.groups
+                .push(BoxPlotGroup::from_data(*label, data.clone()));
         }
         self.compute_value_range();
         self
@@ -271,11 +275,11 @@ impl BoxPlot {
 
         for group in &self.groups {
             let stats = &group.statistics;
-            
+
             // 考虑所有数据点 (包括异常值)
             min_val = min_val.min(stats.min);
             max_val = max_val.max(stats.max);
-            
+
             for &outlier in &stats.outliers {
                 min_val = min_val.min(outlier);
                 max_val = max_val.max(outlier);
@@ -285,7 +289,7 @@ impl BoxPlot {
         // 添加一些边距
         let range = max_val - min_val;
         let margin = range * 0.1;
-        
+
         self.value_range = Some((min_val - margin, max_val + margin));
     }
 
@@ -405,7 +409,7 @@ mod tests {
     fn test_box_statistics_calculation() {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
         let stats = BoxStatistics::from_data(data);
-        
+
         assert_eq!(stats.median, 5.5);
         assert_eq!(stats.q1, 3.25);
         assert_eq!(stats.q3, 7.75);
@@ -415,7 +419,7 @@ mod tests {
     fn test_box_statistics_with_outliers() {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0, 100.0]; // 100 是异常值
         let stats = BoxStatistics::from_data(data);
-        
+
         assert!(!stats.outliers.is_empty());
         assert!(stats.outliers.contains(&100.0));
     }
@@ -423,7 +427,7 @@ mod tests {
     #[test]
     fn test_percentile_calculation() {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-        
+
         assert_eq!(percentile(&data, 0.0), 1.0);
         assert_eq!(percentile(&data, 50.0), 3.0);
         assert_eq!(percentile(&data, 100.0), 5.0);
@@ -444,7 +448,7 @@ mod tests {
 
         let boxplot = BoxPlot::new().from_data_groups(data_groups);
         assert_eq!(boxplot.group_count(), 2);
-        
+
         let group_a = boxplot.get_group(0).unwrap();
         assert_eq!(group_a.label, "Group A");
     }
@@ -466,10 +470,10 @@ mod tests {
     fn test_primitive_generation() {
         let data_groups = &[("Test", vec![1.0, 2.0, 3.0, 4.0, 5.0])];
         let boxplot = BoxPlot::new().from_data_groups(data_groups).auto_range();
-        
+
         let plot_area = crate::PlotArea::new(0.0, 0.0, 100.0, 100.0);
         let primitives = boxplot.generate_primitives(plot_area);
-        
+
         // 应该包含箱子、须线、中位数线等图元
         assert!(!primitives.is_empty());
     }

@@ -1,4 +1,4 @@
-use nalgebra::{Point3, Vector3, Matrix4};
+use nalgebra::{Matrix4, Point3, Vector3};
 
 /// 3D 相机控制器
 #[derive(Debug, Clone)]
@@ -89,7 +89,10 @@ impl Camera3D {
         phi += vertical_angle;
 
         // 限制垂直角度
-        phi = phi.clamp(-std::f32::consts::PI / 2.0 + 0.1, std::f32::consts::PI / 2.0 - 0.1);
+        phi = phi.clamp(
+            -std::f32::consts::PI / 2.0 + 0.1,
+            std::f32::consts::PI / 2.0 - 0.1,
+        );
 
         // 转换回笛卡尔坐标
         let new_offset = Vector3::new(
@@ -106,7 +109,7 @@ impl Camera3D {
         let direction = (self.position - self.target).normalize();
         let distance = (self.position - self.target).magnitude();
         let new_distance = (distance * factor).max(0.1);
-        
+
         self.position = self.target + direction * new_distance;
     }
 
@@ -155,7 +158,7 @@ mod tests {
     #[test]
     fn test_camera_matrices() {
         let camera = Camera3D::new();
-        
+
         // 测试矩阵生成不会panic
         let _view = camera.view_matrix();
         let _projection = camera.projection_matrix();
@@ -165,10 +168,10 @@ mod tests {
     fn test_camera_zoom() {
         let mut camera = Camera3D::new();
         let initial_distance = (camera.position - camera.target).magnitude();
-        
+
         camera.zoom(0.5); // 放大
         let new_distance = (camera.position - camera.target).magnitude();
-        
+
         assert!(new_distance < initial_distance);
     }
 
@@ -176,12 +179,12 @@ mod tests {
     fn test_camera_orbit() {
         let mut camera = Camera3D::new();
         let initial_position = camera.position;
-        
+
         camera.orbit(0.1, 0.1);
-        
+
         // 位置应该发生变化
         assert_ne!(camera.position, initial_position);
-        
+
         // 但距离应该保持不变
         let initial_distance = (initial_position - camera.target).magnitude();
         let new_distance = (camera.position - camera.target).magnitude();

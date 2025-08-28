@@ -106,11 +106,12 @@ where
             AnimationState::Completed => 1.0,
             AnimationState::Paused => {
                 if let Some(pause_duration) = self.pause_time {
-                    (pause_duration.as_secs_f32() / self.config.duration.as_secs_f32()).clamp(0.0, 1.0)
+                    (pause_duration.as_secs_f32() / self.config.duration.as_secs_f32())
+                        .clamp(0.0, 1.0)
                 } else {
                     0.0
                 }
-            },
+            }
             AnimationState::Playing => {
                 if let Some(start) = self.start_time {
                     let now = Instant::now();
@@ -149,13 +150,13 @@ where
                         self.state = AnimationState::Playing;
                     }
                 }
-            },
+            }
             AnimationState::Playing => {
                 let progress = self.progress();
                 if progress >= 1.0 {
                     if self.config.looping {
                         self.current_loop += 1;
-                        
+
                         // 检查是否达到循环次数限制
                         if let Some(max_loops) = self.config.loop_count {
                             if self.current_loop >= max_loops {
@@ -163,14 +164,14 @@ where
                                 return;
                             }
                         }
-                        
+
                         // 重启动画
                         self.start_time = Some(Instant::now());
                     } else {
                         self.state = AnimationState::Completed;
                     }
                 }
-            },
+            }
             _ => {}
         }
     }
@@ -257,10 +258,7 @@ impl Transition<nalgebra::Point2<f32>> {
     /// 获取当前Point2值
     pub fn current_point2(&self) -> nalgebra::Point2<f32> {
         self.current_value(|from, to, t| {
-            nalgebra::Point2::new(
-                from.x + (to.x - from.x) * t,
-                from.y + (to.y - from.y) * t,
-            )
+            nalgebra::Point2::new(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t)
         })
     }
 }
@@ -329,7 +327,7 @@ mod tests {
 
         // 等待一段时间
         thread::sleep(Duration::from_millis(50));
-        
+
         let progress = transition.progress();
         assert!(progress > 0.0 && progress < 1.0);
 
@@ -347,53 +345,52 @@ mod tests {
     #[test]
     fn test_transition_interpolation() {
         let transition = Transition::simple(0.0f32, 100.0f32, Duration::from_millis(1000));
-        
+
         // 模拟50%进度
         let mut test_transition = transition;
         test_transition.start();
         test_transition.start_time = Some(Instant::now() - Duration::from_millis(500));
-        
+
         let current_value = test_transition.current_f32();
         assert!((current_value - 50.0).abs() < 1.0); // 允许小误差
     }
 
     #[test]
     fn test_transition_easing() {
-        let config = AnimationConfig::new(Duration::from_millis(1000))
-            .with_easing(EasingFunction::EaseIn);
-        
+        let config =
+            AnimationConfig::new(Duration::from_millis(1000)).with_easing(EasingFunction::EaseIn);
+
         let mut transition = Transition::new(0.0f32, 100.0f32, config);
         transition.start();
-        
+
         // 模拟50%进度
         transition.start_time = Some(Instant::now() - Duration::from_millis(500));
-        
+
         let raw_progress = transition.raw_progress();
         let eased_progress = transition.eased_progress();
-        
+
         // EaseIn应该使缓动进度小于原始进度
         assert!(eased_progress < raw_progress);
     }
 
     #[test]
     fn test_transition_looping() {
-        let config = AnimationConfig::new(Duration::from_millis(100))
-            .looping(Some(2));
-        
+        let config = AnimationConfig::new(Duration::from_millis(100)).looping(Some(2));
+
         let mut transition = Transition::new(0.0f32, 100.0f32, config);
         transition.start();
-        
+
         // 等待一个周期完成
         thread::sleep(Duration::from_millis(120));
         transition.update();
-        
+
         // 应该仍在播放（第二轮循环）
         assert!(transition.is_playing() || transition.current_loop() > 0);
-        
+
         // 等待第二个周期完成
         thread::sleep(Duration::from_millis(120));
         transition.update();
-        
+
         // 现在应该完成了
         assert!(transition.is_completed() || transition.current_loop() >= 2);
     }
@@ -402,10 +399,10 @@ mod tests {
     fn test_transition_reset() {
         let mut transition = Transition::simple(0.0f32, 100.0f32, Duration::from_millis(1000));
         transition.start();
-        
+
         // 重置到新值
         transition.reset(50.0f32, 150.0f32);
-        
+
         assert_eq!(transition.state(), AnimationState::NotStarted);
         assert_eq!(transition.current_loop(), 0);
     }
@@ -414,13 +411,13 @@ mod tests {
     fn test_transition_f32_transition_to() {
         let mut transition = Transition::simple(0.0f32, 100.0f32, Duration::from_millis(100));
         transition.start();
-        
+
         // 等待一段时间
         thread::sleep(Duration::from_millis(50));
-        
+
         // 平滑过渡到新目标
         transition.transition_to(200.0f32);
-        
+
         // 应该重新开始播放
         assert!(transition.is_playing());
     }
@@ -428,16 +425,16 @@ mod tests {
     #[test]
     fn test_color_transition() {
         let from = vizuara_core::Color::rgb(1.0, 0.0, 0.0); // 红色
-        let to = vizuara_core::Color::rgb(0.0, 1.0, 0.0);   // 绿色
-        
+        let to = vizuara_core::Color::rgb(0.0, 1.0, 0.0); // 绿色
+
         let mut transition = Transition::simple(from, to, Duration::from_millis(1000));
         transition.start();
-        
+
         // 模拟50%进度
         transition.start_time = Some(Instant::now() - Duration::from_millis(500));
-        
+
         let current_color = transition.current_color();
-        
+
         // 中间颜色应该是(0.5, 0.5, 0.0)
         assert!((current_color.r - 0.5).abs() < 0.1);
         assert!((current_color.g - 0.5).abs() < 0.1);
@@ -448,15 +445,15 @@ mod tests {
     fn test_point2_transition() {
         let from = nalgebra::Point2::new(0.0, 0.0);
         let to = nalgebra::Point2::new(100.0, 200.0);
-        
+
         let mut transition = Transition::simple(from, to, Duration::from_millis(1000));
         transition.start();
-        
+
         // 模拟50%进度
         transition.start_time = Some(Instant::now() - Duration::from_millis(500));
-        
+
         let current_point = transition.current_point2();
-        
+
         // 中间点应该是(50, 100)
         assert!((current_point.x - 50.0).abs() < 1.0);
         assert!((current_point.y - 100.0).abs() < 1.0);
@@ -466,35 +463,35 @@ mod tests {
     fn test_remaining_time() {
         let mut transition = Transition::simple(0.0f32, 100.0f32, Duration::from_millis(1000));
         transition.start();
-        
+
         // 模拟50%进度
         transition.start_time = Some(Instant::now() - Duration::from_millis(500));
-        
+
         let remaining = transition.remaining_time();
-        
+
         // 剩余时间应该大约是500ms
         assert!(remaining.as_millis() > 400 && remaining.as_millis() < 600);
     }
 
     #[test]
     fn test_transition_with_delay() {
-        let config = AnimationConfig::new(Duration::from_millis(100))
-            .with_delay(Duration::from_millis(50));
-        
+        let config =
+            AnimationConfig::new(Duration::from_millis(100)).with_delay(Duration::from_millis(50));
+
         let mut transition = Transition::new(0.0f32, 100.0f32, config);
         transition.start();
-        
+
         // 在延迟期间，进度应该是0
         assert_eq!(transition.progress(), 0.0);
         assert_eq!(transition.state(), AnimationState::NotStarted);
-        
+
         // 更新状态
         transition.update();
-        
+
         // 等待延迟完成
         thread::sleep(Duration::from_millis(60));
         transition.update();
-        
+
         // 现在应该开始播放
         assert_eq!(transition.state(), AnimationState::Playing);
     }

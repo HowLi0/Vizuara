@@ -1,5 +1,6 @@
-use vizuara_core::{Primitive, Color};
+use crate::BoundingBox3D;
 use nalgebra::Point3;
+use vizuara_core::{Color, Primitive};
 
 /// 3D 散点图数据点
 #[derive(Debug, Clone)]
@@ -50,9 +51,11 @@ impl Scatter3D {
     pub fn from_data(data: &[(f32, f32, f32)]) -> Self {
         let mut scatter = Self::new();
         for &(x, y, z) in data {
-            scatter.points.push(Point3D::new(x, y, z)
-                .color(scatter.default_color)
-                .size(scatter.default_size));
+            scatter.points.push(
+                Point3D::new(x, y, z)
+                    .color(scatter.default_color)
+                    .size(scatter.default_size),
+            );
         }
         scatter
     }
@@ -81,7 +84,7 @@ impl Scatter3D {
     }
 
     /// 获取数据边界
-    pub fn bounds(&self) -> Option<((f32, f32), (f32, f32), (f32, f32))> {
+    pub fn bounds(&self) -> Option<BoundingBox3D> {
         if self.points.is_empty() {
             return None;
         }
@@ -126,12 +129,8 @@ impl Scatter3D {
 
         for point in &self.points {
             // 将3D点转换为齐次坐标
-            let world_pos = nalgebra::Vector4::new(
-                point.position.x,
-                point.position.y,
-                point.position.z,
-                1.0
-            );
+            let world_pos =
+                nalgebra::Vector4::new(point.position.x, point.position.y, point.position.z, 1.0);
 
             // 应用变换矩阵
             let clip_pos = mvp * world_pos;
@@ -143,10 +142,10 @@ impl Scatter3D {
                 let ndc_z = clip_pos.z / clip_pos.w;
 
                 // 检查是否在视锥体内
-                if ndc_x >= -1.0 && ndc_x <= 1.0 && 
-                   ndc_y >= -1.0 && ndc_y <= 1.0 && 
-                   ndc_z >= 0.0 && ndc_z <= 1.0 {
-
+                if (-1.0..=1.0).contains(&ndc_x)
+                    && (-1.0..=1.0).contains(&ndc_y)
+                    && (0.0..=1.0).contains(&ndc_z)
+                {
                     // 转换到屏幕坐标 (假设800x600窗口)
                     let screen_x = (ndc_x + 1.0) * 400.0;
                     let screen_y = (1.0 - ndc_y) * 300.0;
@@ -158,7 +157,7 @@ impl Scatter3D {
                         point.color.r * depth_factor,
                         point.color.g * depth_factor,
                         point.color.b * depth_factor,
-                        point.color.a
+                        point.color.a,
                     );
 
                     // 创建圆形图元
@@ -201,10 +200,10 @@ mod tests {
     fn test_scatter3d_bounds() {
         let data = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (0.0, 1.0, 2.0)];
         let scatter = Scatter3D::from_data(&data);
-        
+
         let bounds = scatter.bounds().unwrap();
         assert_eq!(bounds.0, (0.0, 4.0)); // X bounds
-        assert_eq!(bounds.1, (1.0, 5.0)); // Y bounds  
+        assert_eq!(bounds.1, (1.0, 5.0)); // Y bounds
         assert_eq!(bounds.2, (2.0, 6.0)); // Z bounds
     }
 
@@ -213,7 +212,7 @@ mod tests {
         let point = Point3D::new(1.0, 2.0, 3.0)
             .color(Color::rgb(1.0, 0.0, 0.0))
             .size(10.0);
-        
+
         assert_eq!(point.position.x, 1.0);
         assert_eq!(point.position.y, 2.0);
         assert_eq!(point.position.z, 3.0);
@@ -222,9 +221,8 @@ mod tests {
 
     #[test]
     fn test_scatter3d_add_point() {
-        let scatter = Scatter3D::new()
-            .add_point(Point3D::new(1.0, 2.0, 3.0));
-        
+        let scatter = Scatter3D::new().add_point(Point3D::new(1.0, 2.0, 3.0));
+
         assert_eq!(scatter.point_count(), 1);
     }
 

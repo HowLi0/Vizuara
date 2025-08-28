@@ -1,0 +1,144 @@
+name: ❓ Question
+description: Ask a question about using Vizuara
+title: "[Question]: "
+labels: ["question", "needs-response"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        有问题吗？我们很乐意帮助！请提供详细信息以便我们更好地协助您。
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: 前置检查
+      description: 请确认您已经尝试过以下方法
+      options:
+        - label: 我已经查阅了官方文档
+          required: true
+        - label: 我已经搜索了现有的 Issues 和 Discussions
+          required: true
+        - label: 我已经查看了示例代码
+          required: false
+
+  - type: dropdown
+    id: question-type
+    attributes:
+      label: 问题类型
+      description: 您的问题属于哪个类别？
+      options:
+        - How to - 如何使用
+        - Best Practice - 最佳实践
+        - Performance - 性能相关
+        - Integration - 集成问题
+        - API Usage - API 使用
+        - Troubleshooting - 故障排除
+        - Design Decision - 设计决策
+        - Comparison - 功能对比
+        - Other - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: 问题描述
+      description: 清楚地描述您的问题
+      placeholder: |
+        请详细描述您的问题...
+        例如：
+        - 我想实现某个功能，但不知道如何开始
+        - 我的代码出现了意外行为
+        - 我想了解某个设计决策的原因
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 使用场景
+      description: 描述您想要实现的目标和使用场景
+      placeholder: |
+        例如：
+        - 我正在开发一个科学数据分析工具
+        - 我需要为财务报告创建交互式图表
+        - 我想在 Web 应用中嵌入可视化组件
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-approach
+    attributes:
+      label: 当前方法
+      description: 您目前尝试了什么方法？
+      placeholder: |
+        ```rust
+        // 您当前的代码或方法
+        ```
+      render: rust
+
+  - type: textarea
+    id: expected-outcome
+    attributes:
+      label: 期望结果
+      description: 您希望达到什么效果？
+      placeholder: |
+        描述您期望的结果...
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境信息
+      description: 您的开发环境信息
+      placeholder: |
+        - OS: [e.g. Ubuntu 22.04]
+        - Rust: [e.g. 1.75.0]
+        - Vizuara: [e.g. 0.3.1-alpha]
+        - 相关依赖版本
+      render: markdown
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: 紧急程度
+      description: 您需要多快得到答案？
+      options:
+        - Low - 不急，有时间就回答
+        - Medium - 希望几天内得到回答
+        - High - 希望尽快得到回答
+        - Urgent - 非常紧急，阻塞开发
+
+  - type: dropdown
+    id: experience-level
+    attributes:
+      label: 经验水平
+      description: 您的 Rust 和数据可视化经验水平？
+      options:
+        - Beginner - 初学者
+        - Intermediate - 中级
+        - Advanced - 高级
+        - Expert - 专家
+
+  - type: textarea
+    id: research
+    attributes:
+      label: 已尝试的方法
+      description: 您已经尝试了哪些方法或查阅了哪些资料？
+      placeholder: |
+        例如：
+        - 查看了 X 文档章节
+        - 尝试了 Y 示例代码
+        - 搜索了 Z 相关问题
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 额外信息
+      description: 任何其他可能有助于回答问题的信息
+      placeholder: |
+        - 错误信息
+        - 截图
+        - 相关链接
+        - 具体的技术要求

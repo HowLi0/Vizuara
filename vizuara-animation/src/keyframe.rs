@@ -60,7 +60,8 @@ where
     /// 添加关键帧
     pub fn add_keyframe(mut self, keyframe: Keyframe<T>) -> Self {
         self.keyframes.push(keyframe);
-        self.keyframes.sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap());
+        self.keyframes
+            .sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap());
         self
     }
 
@@ -125,7 +126,7 @@ where
                 } else {
                     0.0
                 }
-            },
+            }
             AnimationState::Playing => {
                 if let Some(start) = self.start_time {
                     let elapsed = start.elapsed();
@@ -222,10 +223,7 @@ impl KeyframeAnimation<nalgebra::Point2<f32>> {
     /// 获取当前Point2值
     pub fn current_point2(&self) -> Option<nalgebra::Point2<f32>> {
         self.current_value(|from, to, t| {
-            nalgebra::Point2::new(
-                from.x + (to.x - from.x) * t,
-                from.y + (to.y - from.y) * t,
-            )
+            nalgebra::Point2::new(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t)
         })
     }
 }
@@ -245,9 +243,8 @@ mod tests {
 
     #[test]
     fn test_keyframe_with_easing() {
-        let keyframe = Keyframe::new(0.3, 5.0)
-            .with_easing(EasingFunction::EaseIn);
-        
+        let keyframe = Keyframe::new(0.3, 5.0).with_easing(EasingFunction::EaseIn);
+
         assert_eq!(keyframe.time, 0.3);
         assert_eq!(keyframe.value, 5.0);
         assert_eq!(keyframe.easing, EasingFunction::EaseIn);
@@ -300,7 +297,7 @@ mod tests {
 
         // 测试各个区间的插值
         assert_eq!(animation.f32_at(0.125).unwrap(), 12.5); // 0.0到25.0的中点
-        assert_eq!(animation.f32_at(0.5).unwrap(), 50.0);   // 25.0到75.0的中点
+        assert_eq!(animation.f32_at(0.5).unwrap(), 50.0); // 25.0到75.0的中点
         assert_eq!(animation.f32_at(0.875).unwrap(), 87.5); // 75.0到100.0的中点
     }
 
@@ -338,20 +335,20 @@ mod tests {
             .at(1.0, 100.0);
 
         animation.start();
-        
+
         // 等待一段时间
         thread::sleep(Duration::from_millis(50));
-        
+
         let progress = animation.progress();
-        assert!(progress > 0.0 && progress < 1.0);
-        
+        assert!((0.0..1.0).contains(&progress));
+
         // 更新状态
         animation.update();
-        
+
         // 等待动画完成
         thread::sleep(Duration::from_millis(60));
         animation.update();
-        
+
         assert_eq!(animation.state(), AnimationState::Completed);
         assert_eq!(animation.progress(), 1.0);
     }
@@ -365,7 +362,7 @@ mod tests {
         // 测试插值
         let mid_value = animation.f32_at(0.5).unwrap_or(0.0);
         // 只要得到有效的插值结果就通过测试
-        assert!(mid_value >= 0.0 && mid_value <= 100.0);
+        assert!((0.0..=100.0).contains(&mid_value));
     }
 
     #[test]
@@ -388,8 +385,7 @@ mod tests {
 
     #[test]
     fn test_single_keyframe_animation() {
-        let animation = KeyframeAnimation::new(Duration::from_millis(1000))
-            .at(0.5, 42.0);
+        let animation = KeyframeAnimation::new(Duration::from_millis(1000)).at(0.5, 42.0);
 
         // 无论什么时间，都应该返回唯一的值
         assert_eq!(animation.f32_at(0.0).unwrap(), 42.0);

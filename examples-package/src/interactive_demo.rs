@@ -1,16 +1,16 @@
+use nalgebra::Point2;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use nalgebra::Point2;
-use winit::event::{Event, WindowEvent, ElementState, MouseButton, MouseScrollDelta};
+use winit::event::{ElementState, Event, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 
-use vizuara_core::{Color, Style};
 use vizuara_core::coords::LogicalPosition;
+use vizuara_core::{Color, Style};
+use vizuara_interactivity::tools::{SimpleKeyboardEvent, SimpleMouseEvent, ToolManager};
 use vizuara_interactivity::viewport::Viewport;
-use vizuara_interactivity::tools::{ToolManager, SimpleMouseEvent, SimpleKeyboardEvent};
-use vizuara_plots::{PlotArea, scatter::ScatterPlot, line::LinePlot};
-use vizuara_scene::{Scene, Figure};
+use vizuara_plots::{line::LinePlot, scatter::ScatterPlot, PlotArea};
+use vizuara_scene::{Figure, Scene};
 use vizuara_wgpu::WgpuRenderer;
 
 /// 交互功能演示：真实窗口 + 鼠标/键盘交互
@@ -32,7 +32,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_title("Vizuara - 交互演示")
             .with_inner_size(winit::dpi::LogicalSize::new(900u32, 680u32))
             .with_min_inner_size(winit::dpi::LogicalSize::new(480u32, 360u32))
-            .build(&event_loop)?
+            .build(&event_loop)?,
     );
     let size = window.inner_size();
     let (mut renderer, surface) = WgpuRenderer::new(&window, size).await?;
@@ -40,7 +40,8 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 3) 初始化 Viewport + Tools（以数据范围为世界坐标）
     let (min_x, min_y, max_x, max_y) = data_bounds_f32(&data_world);
     let mut viewport = Viewport::from_data_range(
-        size.width, size.height,
+        size.width,
+        size.height,
         (min_x as f64, min_y as f64),
         (max_x as f64, max_y as f64),
         0.1,
@@ -60,7 +61,11 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     event_loop
         .run(move |event, control_flow| {
             match event {
-                Event::WindowEvent { event, window_id: wid, .. } if wid == window_id => {
+                Event::WindowEvent {
+                    event,
+                    window_id: wid,
+                    ..
+                } if wid == window_id => {
                     match event {
                         WindowEvent::CloseRequested => control_flow.exit(),
 
@@ -73,9 +78,17 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
 
                         WindowEvent::CursorMoved { position, .. } => {
-                            last_cursor = LogicalPosition { x: position.x, y: position.y };
+                            last_cursor = LogicalPosition {
+                                x: position.x,
+                                y: position.y,
+                            };
                             // 将移动交给当前工具（如平移进行中）
-                            let _ = tools.handle_mouse_event(&SimpleMouseEvent::Move { position: last_cursor }, &mut viewport);
+                            let _ = tools.handle_mouse_event(
+                                &SimpleMouseEvent::Move {
+                                    position: last_cursor,
+                                },
+                                &mut viewport,
+                            );
                         }
 
                         WindowEvent::MouseInput { state, button, .. } => {
@@ -85,19 +98,41 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     let now = Instant::now();
                                     let is_double = last_click
                                         .as_ref()
-                                        .map(|(b, t)| *b == button && now.duration_since(*t) <= Duration::from_millis(300))
+                                        .map(|(b, t)| {
+                                            *b == button
+                                                && now.duration_since(*t)
+                                                    <= Duration::from_millis(300)
+                                        })
                                         .unwrap_or(false);
                                     if is_double {
-                                        let _ = tools.handle_mouse_event(&SimpleMouseEvent::DoubleClick { button, position: last_cursor }, &mut viewport);
+                                        let _ = tools.handle_mouse_event(
+                                            &SimpleMouseEvent::DoubleClick {
+                                                button,
+                                                position: last_cursor,
+                                            },
+                                            &mut viewport,
+                                        );
                                         last_click = None;
                                     } else {
                                         last_click = Some((button, now));
-                                        let _ = tools.handle_mouse_event(&SimpleMouseEvent::ButtonPress { button, position: last_cursor }, &mut viewport);
+                                        let _ = tools.handle_mouse_event(
+                                            &SimpleMouseEvent::ButtonPress {
+                                                button,
+                                                position: last_cursor,
+                                            },
+                                            &mut viewport,
+                                        );
                                     }
                                     window_for_redraw.request_redraw();
                                 }
                                 ElementState::Released => {
-                                    let _ = tools.handle_mouse_event(&SimpleMouseEvent::ButtonRelease { button, position: last_cursor }, &mut viewport);
+                                    let _ = tools.handle_mouse_event(
+                                        &SimpleMouseEvent::ButtonRelease {
+                                            button,
+                                            position: last_cursor,
+                                        },
+                                        &mut viewport,
+                                    );
                                     window_for_redraw.request_redraw();
                                 }
                             }
@@ -109,7 +144,13 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 MouseScrollDelta::LineDelta(_, y) => y as f64,
                                 MouseScrollDelta::PixelDelta(pos) => pos.y / 60.0, // 近似换算（pos.y 已为 f64）
                             };
-                            let _ = tools.handle_mouse_event(&SimpleMouseEvent::Scroll { delta: dy, position: last_cursor }, &mut viewport);
+                            let _ = tools.handle_mouse_event(
+                                &SimpleMouseEvent::Scroll {
+                                    delta: dy,
+                                    position: last_cursor,
+                                },
+                                &mut viewport,
+                            );
                             window_for_redraw.request_redraw();
                         }
 
@@ -131,7 +172,10 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 };
 
                                 if let Some(k) = key_str {
-                                    let _ = tools.handle_keyboard_event(&SimpleKeyboardEvent::KeyPress { key: k.to_string() }, &mut viewport);
+                                    let _ = tools.handle_keyboard_event(
+                                        &SimpleKeyboardEvent::KeyPress { key: k.to_string() },
+                                        &mut viewport,
+                                    );
                                     // ESC 也交给工具，R 重置后也重绘
                                     window_for_redraw.request_redraw();
                                 }
@@ -140,7 +184,8 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         WindowEvent::RedrawRequested => {
                             // 依据当前 viewport 构建场景 -> 图元
-                            let (prims, styles) = build_primitives_with_view(&data_world, &viewport);
+                            let (prims, styles) =
+                                build_primitives_with_view(&data_world, &viewport);
                             if let Err(e) = renderer.render(&surface, &prims, &styles) {
                                 eprintln!("渲染错误: {}", e);
                             }
@@ -161,7 +206,10 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// 根据当前 viewport 构建图元（包含轴、数据与选择框叠加）
-fn build_primitives_with_view(data_world: &[(f32, f32)], viewport: &Viewport) -> (Vec<vizuara_core::Primitive>, Vec<Style>) {
+fn build_primitives_with_view(
+    data_world: &[(f32, f32)],
+    viewport: &Viewport,
+) -> (Vec<vizuara_core::Primitive>, Vec<Style>) {
     // 以 viewport 的世界边界作为当前显示范围
     let b = viewport.bounds();
 
@@ -211,13 +259,11 @@ fn build_primitives_with_view(data_world: &[(f32, f32)], viewport: &Viewport) ->
     });
 
     // 一个通用样式（应用于点/线/矩形等，无需一一匹配）
-    let styles = vec![
-        Style::new()
-            .fill_color(Color::rgb(0.2, 0.5, 0.9))
-            .stroke(Color::rgb(0.9, 0.3, 0.3), 2.0)
-            .marker(vizuara_core::MarkerStyle::Circle, 8.0)
-            .opacity(1.0),
-    ];
+    let styles = vec![Style::new()
+        .fill_color(Color::rgb(0.2, 0.5, 0.9))
+        .stroke(Color::rgb(0.9, 0.3, 0.3), 2.0)
+        .marker(vizuara_core::MarkerStyle::Circle, 8.0)
+        .opacity(1.0)];
 
     (primitives, styles)
 }
@@ -232,6 +278,26 @@ fn create_demo_data() -> Vec<(f64, f64)> {
     data
 }
 
+fn data_bounds_f32(data: &[(f32, f32)]) -> (f32, f32, f32, f32) {
+    let (mut min_x, mut min_y) = (f32::INFINITY, f32::INFINITY);
+    let (mut max_x, mut max_y) = (f32::NEG_INFINITY, f32::NEG_INFINITY);
+    for &(x, y) in data.iter() {
+        if x < min_x {
+            min_x = x;
+        }
+        if y < min_y {
+            min_y = y;
+        }
+        if x > max_x {
+            max_x = x;
+        }
+        if y > max_y {
+            max_y = y;
+        }
+    }
+    (min_x, min_y, max_x, max_y)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -244,25 +310,23 @@ mod tests {
 
     #[test]
     fn test_build_primitives_with_view() {
-        let data: Vec<(f32,f32)> = create_demo_data().into_iter().map(|(x,y)|(x as f32,y as f32)).collect();
+        let data: Vec<(f32, f32)> = create_demo_data()
+            .into_iter()
+            .map(|(x, y)| (x as f32, y as f32))
+            .collect();
         let (min_x, min_y, max_x, max_y) = data_bounds_f32(&data);
-        let mut vp = Viewport::from_data_range(800, 600, (min_x as f64, min_y as f64), (max_x as f64, max_y as f64), 0.1);
+        let mut vp = Viewport::from_data_range(
+            800,
+            600,
+            (min_x as f64, min_y as f64),
+            (max_x as f64, max_y as f64),
+            0.1,
+        );
         let (prims, _styles) = build_primitives_with_view(&data, &vp);
         assert!(!prims.is_empty());
-        vp.zoom_at_point(1.2, LogicalPosition{ x: 400.0, y: 300.0 }).unwrap();
+        vp.zoom_at_point(1.2, LogicalPosition { x: 400.0, y: 300.0 })
+            .unwrap();
         let (prims2, _styles2) = build_primitives_with_view(&data, &vp);
         assert!(!prims2.is_empty());
     }
-}
-
-fn data_bounds_f32(data: &[(f32, f32)]) -> (f32, f32, f32, f32) {
-    let (mut min_x, mut min_y) = (f32::INFINITY, f32::INFINITY);
-    let (mut max_x, mut max_y) = (f32::NEG_INFINITY, f32::NEG_INFINITY);
-    for &(x, y) in data.iter() {
-        if x < min_x { min_x = x; }
-        if y < min_y { min_y = y; }
-        if x > max_x { max_x = x; }
-        if y > max_y { max_y = y; }
-    }
-    (min_x, min_y, max_x, max_y)
 }

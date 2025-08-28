@@ -1,14 +1,23 @@
-use serde::{Deserialize, Serialize};
-use nalgebra::{Point2, Point3};
 use crate::Color;
+use nalgebra::{Point2, Point3};
+use serde::{Deserialize, Serialize};
 
 /// 水平对齐
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub enum HorizontalAlign { Left, Center, Right }
+pub enum HorizontalAlign {
+    Left,
+    Center,
+    Right,
+}
 
 /// 垂直对齐
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub enum VerticalAlign { Top, Middle, Baseline, Bottom }
+pub enum VerticalAlign {
+    Top,
+    Middle,
+    Baseline,
+    Bottom,
+}
 
 /// 渲染图元的基础枚举
 /// 这些是渲染器能够处理的基本几何元素
@@ -19,14 +28,20 @@ pub enum Primitive {
     /// 多个点（用于散点图）
     Points(Vec<Point2<f32>>),
     /// 线段
-    Line { start: Point2<f32>, end: Point2<f32> },
+    Line {
+        start: Point2<f32>,
+        end: Point2<f32>,
+    },
     /// 连续线条（用于折线图）
     LineStrip(Vec<Point2<f32>>),
-    /// 矩形
-    Rectangle {
-        min: Point2<f32>,
-        max: Point2<f32>,
+    /// 多段线（用于复杂路径）
+    Polyline {
+        points: Vec<Point2<f32>>,
+        color: Color,
+        width: f32,
     },
+    /// 矩形
+    Rectangle { min: Point2<f32>, max: Point2<f32> },
     /// 带样式的矩形（包含填充与可选描边）
     RectangleStyled {
         min: Point2<f32>,
@@ -35,9 +50,31 @@ pub enum Primitive {
         stroke: Option<(Color, f32)>,
     },
     /// 圆形
-    Circle {
+    Circle { center: Point2<f32>, radius: f32 },
+    /// 多边形（用于面积图、雷达图等）
+    Polygon {
+        points: Vec<Point2<f32>>,
+        fill: Color,
+        stroke: Option<(Color, f32)>,
+    },
+    /// 扇形（用于饼图）
+    ArcSector {
         center: Point2<f32>,
         radius: f32,
+        start_angle: f32,
+        end_angle: f32,
+        fill: Color,
+        stroke: Option<(Color, f32)>,
+    },
+    /// 圆环扇形（用于圆环图）
+    ArcRing {
+        center: Point2<f32>,
+        inner_radius: f32,
+        outer_radius: f32,
+        start_angle: f32,
+        end_angle: f32,
+        fill: Color,
+        stroke: Option<(Color, f32)>,
     },
     /// 文本（带颜色与对齐）
     Text {
@@ -53,7 +90,10 @@ pub enum Primitive {
     /// 3D点（用于3D可视化）
     Point3D(Point3<f32>),
     /// 3D线条
-    Line3D { start: Point3<f32>, end: Point3<f32> },
+    Line3D {
+        start: Point3<f32>,
+        end: Point3<f32>,
+    },
 }
 
 impl Primitive {
@@ -69,14 +109,14 @@ impl Primitive {
                 let mut min_y = points[0].y;
                 let mut max_x = points[0].x;
                 let mut max_y = points[0].y;
-                
+
                 for point in points {
                     min_x = min_x.min(point.x);
                     min_y = min_y.min(point.y);
                     max_x = max_x.max(point.x);
                     max_y = max_y.max(point.y);
                 }
-                
+
                 Some((Point2::new(min_x, min_y), Point2::new(max_x, max_y)))
             }
             Primitive::Line { start, end } => {
@@ -86,7 +126,7 @@ impl Primitive {
                 let max_y = start.y.max(end.y);
                 Some((Point2::new(min_x, min_y), Point2::new(max_x, max_y)))
             }
-            Primitive::LineStrip(points) => {
+            Primitive::LineStrip(points) | Primitive::Polyline { points, .. } => {
                 if points.is_empty() {
                     return None;
                 }
@@ -94,14 +134,14 @@ impl Primitive {
                 let mut min_y = points[0].y;
                 let mut max_x = points[0].x;
                 let mut max_y = points[0].y;
-                
+
                 for point in points {
                     min_x = min_x.min(point.x);
                     min_y = min_y.min(point.y);
                     max_x = max_x.max(point.x);
                     max_y = max_y.max(point.y);
                 }
-                
+
                 Some((Point2::new(min_x, min_y), Point2::new(max_x, max_y)))
             }
             Primitive::Rectangle { min, max } => Some((*min, *max)),
@@ -109,6 +149,34 @@ impl Primitive {
             Primitive::Circle { center, radius } => {
                 let min = Point2::new(center.x - radius, center.y - radius);
                 let max = Point2::new(center.x + radius, center.y + radius);
+                Some((min, max))
+            }
+            Primitive::Polygon { points, .. } => {
+                if points.is_empty() {
+                    return None;
+                }
+                let mut min_x = points[0].x;
+                let mut min_y = points[0].y;
+                let mut max_x = points[0].x;
+                let mut max_y = points[0].y;
+
+                for point in points {
+                    min_x = min_x.min(point.x);
+                    min_y = min_y.min(point.y);
+                    max_x = max_x.max(point.x);
+                    max_y = max_y.max(point.y);
+                }
+
+                Some((Point2::new(min_x, min_y), Point2::new(max_x, max_y)))
+            }
+            Primitive::ArcSector { center, radius, .. } => {
+                let min = Point2::new(center.x - radius, center.y - radius);
+                let max = Point2::new(center.x + radius, center.y + radius);
+                Some((min, max))
+            }
+            Primitive::ArcRing { center, outer_radius, .. } => {
+                let min = Point2::new(center.x - outer_radius, center.y - outer_radius);
+                let max = Point2::new(center.x + outer_radius, center.y + outer_radius);
                 Some((min, max))
             }
             Primitive::Text { position, .. } => Some((*position, *position)),
@@ -120,14 +188,14 @@ impl Primitive {
                 let mut min_y = points[0].y;
                 let mut max_x = points[0].x;
                 let mut max_y = points[0].y;
-                
+
                 for point in points {
                     min_x = min_x.min(point.x);
                     min_y = min_y.min(point.y);
                     max_x = max_x.max(point.x);
                     max_y = max_y.max(point.y);
                 }
-                
+
                 Some((Point2::new(min_x, min_y), Point2::new(max_x, max_y)))
             }
             // 3D 图元暂时投影到 2D

@@ -60,12 +60,49 @@ name = "animated_visual_demo"
 path = "src/animated_visual_demo.rs"
 
 [[bin]]
-name = "theme_demo"
-path = "src/theme_demo.rs"
-
-[[bin]]
 name = "theme_visual_demo"
 path = "src/theme_visual_demo.rs"
+
+[[bin]]
+name = "density_demo"
+path = "src/density_demo.rs"
+
+[[bin]]
+name = "export_demo"
+path = "src/export_demo.rs"
+
+[[bin]]
+name = "pie_demo"
+path = "src/pie_demo.rs"
+
+[[bin]]
+name = "area_demo"
+path = "src/area_demo.rs"
+
+[[bin]]
+name = "radar_demo"
+path = "src/radar_demo.rs"
+
+[[bin]]
+name = "violin_demo"
+path = "src/violin_demo.rs"
+
+[[bin]]
+name = "contour_demo"
+path = "src/contour_demo.rs"
+
+[[bin]]
+name = "sankey_demo"
+path = "src/sankey_demo.rs"
+
+[[bin]]
+name = "treemap_demo"
+path = "src/treemap_demo.rs"
+
+[[bin]]
+name = "parallel_demo"
+path = "src/parallel_demo.rs"
+
 
 [dependencies]
 vizuara-core = { path = "../vizuara-core" }
@@ -78,7 +115,9 @@ vizuara-wgpu = { path = "../vizuara-wgpu" }
 vizuara-3d = { path = "../vizuara-3d" }
 vizuara-animation = { path = "../vizuara-animation" }
 vizuara-themes = { path = "../vizuara-themes" }
+vizuara-export = { path = "../vizuara-export" }
 winit = { workspace = true }
 nalgebra = { workspace = true }
 tokio ={workspace=true}
 pollster = "0.3"
+rand = "0.8"

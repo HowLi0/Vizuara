@@ -1,14 +1,17 @@
-pub mod surface;
-pub mod scatter3d;
-pub mod mesh;
 pub mod camera;
 pub mod lighting;
+pub mod mesh;
+pub mod scatter3d;
+pub mod surface;
 
-pub use surface::*;
-pub use scatter3d::*;
-pub use mesh::*;
 pub use camera::*;
 pub use lighting::*;
+pub use mesh::*;
+pub use scatter3d::*;
+pub use surface::*;
+
+/// 3D边界框类型：((x_min, x_max), (y_min, y_max), (z_min, z_max))
+pub type BoundingBox3D = ((f32, f32), (f32, f32), (f32, f32));
 
 /// 3D 绘图区域
 #[derive(Debug, Clone)]
@@ -26,11 +29,7 @@ pub struct Plot3DArea {
 }
 
 impl Plot3DArea {
-    pub fn new(
-        x_range: (f32, f32),
-        y_range: (f32, f32),
-        z_range: (f32, f32)
-    ) -> Self {
+    pub fn new(x_range: (f32, f32), y_range: (f32, f32), z_range: (f32, f32)) -> Self {
         Self {
             x_range,
             y_range,
@@ -47,7 +46,12 @@ impl Plot3DArea {
     }
 
     /// 设置相机位置
-    pub fn camera(mut self, eye: nalgebra::Point3<f32>, target: nalgebra::Point3<f32>, up: nalgebra::Vector3<f32>) -> Self {
+    pub fn camera(
+        mut self,
+        eye: nalgebra::Point3<f32>,
+        target: nalgebra::Point3<f32>,
+        up: nalgebra::Vector3<f32>,
+    ) -> Self {
         self.view_matrix = nalgebra::Matrix4::look_at_rh(&eye, &target, &up);
         self
     }

@@ -1,7 +1,7 @@
-use vizuara_window::Window3D;
-use vizuara_3d::{Scatter3D, Surface3D, Mesh3D};
-use vizuara_core::Color;
 use std::f32::consts::PI;
+use vizuara_3d::{Mesh3D, Scatter3D, Surface3D};
+use vizuara_core::Color;
+use vizuara_window::Window3D;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -27,9 +27,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 创建3D表面 - 波纹函数
     println!("🌊 生成3D波纹表面...");
     let surface = Surface3D::from_function(
-        (-3.0, 3.0),  // X范围
-        (-3.0, 3.0),  // Y范围
-        (50, 50),     // 高分辨率
+        (-3.0, 3.0), // X范围
+        (-3.0, 3.0), // Y范围
+        (50, 50),    // 高分辨率
         |x, y| {
             let r = (x * x + y * y).sqrt();
             if r == 0.0 {
@@ -37,11 +37,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 (r * PI).sin() / r * 0.5
             }
-        }
-    ).wireframe(true)
-     .wireframe_color(Color::rgb(0.2, 0.8, 0.2));
+        },
+    )
+    .wireframe(true)
+    .wireframe_color(Color::rgb(0.2, 0.8, 0.2));
 
-    println!("🕸️  表面网格: {}x{}", surface.mesh().width, surface.mesh().height);
+    println!(
+        "🕸️  表面网格: {}x{}",
+        surface.mesh().width,
+        surface.mesh().height
+    );
 
     // 创建3D立方体网格
     println!("📦 创建3D立方体...");

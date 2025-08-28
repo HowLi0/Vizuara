@@ -1,22 +1,17 @@
 //! 3D 光照系统
-//! 
+//!
 //! 提供现代化的PBR光照模型和多种光源类型
 
-use nalgebra::{Vector3, Point3};
+use nalgebra::{Point3, Vector3};
 use vizuara_core::Color;
 
 /// 光源类型
 #[derive(Debug, Clone)]
 pub enum LightType {
     /// 平行光 (太阳光)
-    Directional {
-        direction: Vector3<f32>,
-    },
+    Directional { direction: Vector3<f32> },
     /// 点光源
-    Point {
-        position: Point3<f32>,
-        radius: f32,
-    },
+    Point { position: Point3<f32>, radius: f32 },
     /// 聚光灯
     Spot {
         position: Point3<f32>,
@@ -43,13 +38,15 @@ impl Light {
     /// 创建平行光
     pub fn directional(direction: Vector3<f32>, color: Color, intensity: f32) -> Self {
         Self {
-            light_type: LightType::Directional { direction: direction.normalize() },
+            light_type: LightType::Directional {
+                direction: direction.normalize(),
+            },
             color,
             intensity,
             enabled: true,
         }
     }
-    
+
     /// 创建点光源
     pub fn point(position: Point3<f32>, color: Color, intensity: f32, radius: f32) -> Self {
         Self {
@@ -59,15 +56,15 @@ impl Light {
             enabled: true,
         }
     }
-    
+
     /// 创建聚光灯
     pub fn spot(
-        position: Point3<f32>, 
-        direction: Vector3<f32>, 
-        color: Color, 
+        position: Point3<f32>,
+        direction: Vector3<f32>,
+        color: Color,
         intensity: f32,
         inner_angle: f32,
-        outer_angle: f32
+        outer_angle: f32,
     ) -> Self {
         Self {
             light_type: LightType::Spot {
@@ -81,7 +78,7 @@ impl Light {
             enabled: true,
         }
     }
-    
+
     /// 创建默认场景光照 (白色平行光从上方照射)
     pub fn default_scene() -> Vec<Self> {
         vec![
@@ -89,20 +86,12 @@ impl Light {
             Light::directional(
                 Vector3::new(-0.3, -0.8, -0.5),
                 Color::rgb(1.0, 1.0, 0.95),
-                2.5
+                2.5,
             ),
             // 环境光 - 柔和的蓝色填充光
-            Light::directional(
-                Vector3::new(0.2, 0.4, 0.8),
-                Color::rgb(0.4, 0.6, 1.0),
-                0.8
-            ),
+            Light::directional(Vector3::new(0.2, 0.4, 0.8), Color::rgb(0.4, 0.6, 1.0), 0.8),
             // 背光 - 轮廓光
-            Light::directional(
-                Vector3::new(0.5, 0.2, 0.8),
-                Color::rgb(1.0, 0.8, 0.6),
-                0.6
-            ),
+            Light::directional(Vector3::new(0.5, 0.2, 0.8), Color::rgb(1.0, 0.8, 0.6), 0.6),
         ]
     }
 }
@@ -133,53 +122,53 @@ impl Material {
             emissive: Color::rgb(0.0, 0.0, 0.0),
         }
     }
-    
+
     /// 设置金属度
     pub fn metallic(mut self, metallic: f32) -> Self {
         self.metallic = metallic.clamp(0.0, 1.0);
         self
     }
-    
+
     /// 设置粗糙度
     pub fn roughness(mut self, roughness: f32) -> Self {
         self.roughness = roughness.clamp(0.0, 1.0);
         self
     }
-    
+
     /// 设置环境遮蔽
     pub fn ao(mut self, ao: f32) -> Self {
         self.ao = ao.clamp(0.0, 1.0);
         self
     }
-    
+
     /// 设置自发光
     pub fn emissive(mut self, emissive: Color) -> Self {
         self.emissive = emissive;
         self
     }
-    
-    /// 创建预设材质
 
+    /// 创建预设材质
+    ///
     /// 塑料材质
     pub fn plastic(color: Color) -> Self {
         Self::new(color).metallic(0.0).roughness(0.7)
     }
-    
+
     /// 金属材质
     pub fn metal(color: Color) -> Self {
         Self::new(color).metallic(1.0).roughness(0.2)
     }
-    
+
     /// 玻璃材质
     pub fn glass(color: Color) -> Self {
         Self::new(color).metallic(0.0).roughness(0.0)
     }
-    
+
     /// 陶瓷材质
     pub fn ceramic(color: Color) -> Self {
         Self::new(color).metallic(0.0).roughness(0.8)
     }
-    
+
     /// 科学数据可视化的默认材质
     pub fn data_visualization() -> Vec<Self> {
         vec![
@@ -211,23 +200,23 @@ impl LightingCalculator {
             ambient_intensity: 0.3,
         }
     }
-    
+
     /// 添加光源
     pub fn add_light(&mut self, light: Light) {
         self.lights.push(light);
     }
-    
+
     /// 设置环境光
     pub fn ambient_light(&mut self, color: Color, intensity: f32) {
         self.ambient_color = color;
         self.ambient_intensity = intensity;
     }
-    
+
     /// 获取所有光源
     pub fn lights(&self) -> &[Light] {
         &self.lights
     }
-    
+
     /// 计算光照 (简化的CPU版本，实际渲染在GPU中进行)
     pub fn calculate_lighting(
         &self,
@@ -237,27 +226,25 @@ impl LightingCalculator {
         material: &Material,
     ) -> Color {
         let mut final_color = Color::rgb(0.0, 0.0, 0.0);
-        
+
         // 环境光
         final_color = final_color + (self.ambient_color * self.ambient_intensity);
-        
+
         // 计算每个光源的贡献
         for light in &self.lights {
             if !light.enabled {
                 continue;
             }
-            
+
             let light_contribution = match &light.light_type {
-                LightType::Directional { direction } => {
-                    self.calculate_directional_light(
-                        *direction, 
-                        &light.color, 
-                        light.intensity,
-                        surface_normal, 
-                        view_direction, 
-                        material
-                    )
-                },
+                LightType::Directional { direction } => self.calculate_directional_light(
+                    *direction,
+                    &light.color,
+                    light.intensity,
+                    surface_normal,
+                    view_direction,
+                    material,
+                ),
                 LightType::Point { position, .. } => {
                     let light_direction = (position - surface_point).normalize();
                     self.calculate_point_light(
@@ -266,9 +253,9 @@ impl LightingCalculator {
                         light.intensity,
                         surface_normal,
                         view_direction,
-                        material
+                        material,
                     )
-                },
+                }
                 LightType::Spot { position, .. } => {
                     let light_direction = (position - surface_point).normalize();
                     // 简化的聚光灯计算
@@ -278,20 +265,20 @@ impl LightingCalculator {
                         light.intensity,
                         surface_normal,
                         view_direction,
-                        material
+                        material,
                     )
-                },
+                }
             };
-            
+
             final_color = final_color + light_contribution;
         }
-        
+
         // 添加自发光
         final_color = final_color + material.emissive;
-        
+
         final_color
     }
-    
+
     /// 计算平行光照明
     fn calculate_directional_light(
         &self,
@@ -305,15 +292,18 @@ impl LightingCalculator {
         // Lambert 漫反射
         let diffuse_strength = (-light_direction).dot(&surface_normal).max(0.0);
         let diffuse = material.albedo * *light_color * diffuse_strength * light_intensity;
-        
+
         // Blinn-Phong 镜面反射
         let halfway = (-light_direction + view_direction).normalize();
-        let spec_strength = halfway.dot(&surface_normal).max(0.0).powf(32.0 * (1.0 - material.roughness));
+        let spec_strength = halfway
+            .dot(&surface_normal)
+            .max(0.0)
+            .powf(32.0 * (1.0 - material.roughness));
         let specular = *light_color * spec_strength * light_intensity * (1.0 - material.roughness);
-        
+
         diffuse + specular
     }
-    
+
     /// 计算点光源照明
     fn calculate_point_light(
         &self,
@@ -331,7 +321,7 @@ impl LightingCalculator {
             light_intensity,
             surface_normal,
             view_direction,
-            material
+            material,
         )
     }
 }
@@ -348,39 +338,36 @@ mod tests {
 
     #[test]
     fn test_light_creation() {
-        let dir_light = Light::directional(
-            Vector3::new(0.0, -1.0, 0.0),
-            Color::rgb(1.0, 1.0, 1.0),
-            1.0
-        );
-        
+        let dir_light =
+            Light::directional(Vector3::new(0.0, -1.0, 0.0), Color::rgb(1.0, 1.0, 1.0), 1.0);
+
         assert!(dir_light.enabled);
         assert_eq!(dir_light.intensity, 1.0);
     }
-    
+
     #[test]
     fn test_material_creation() {
         let plastic = Material::plastic(Color::rgb(1.0, 0.0, 0.0));
         assert_eq!(plastic.metallic, 0.0);
         assert_eq!(plastic.roughness, 0.7);
-        
+
         let metal = Material::metal(Color::rgb(0.8, 0.8, 0.8));
         assert_eq!(metal.metallic, 1.0);
         assert_eq!(metal.roughness, 0.2);
     }
-    
+
     #[test]
     fn test_lighting_calculator() {
         let mut calculator = LightingCalculator::new();
         assert!(!calculator.lights().is_empty());
-        
+
         calculator.add_light(Light::point(
             Point3::new(0.0, 0.0, 5.0),
             Color::rgb(1.0, 1.0, 1.0),
             1.0,
-            10.0
+            10.0,
         ));
-        
+
         assert_eq!(calculator.lights().len(), 4); // 3 default + 1 added
     }
 }

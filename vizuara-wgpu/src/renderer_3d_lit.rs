@@ -1,15 +1,15 @@
 //! 支持光照的高级3D渲染器
-//! 
+//!
 //! 基于物理的渲染(PBR)和多光源系统
 
-use nalgebra::{Matrix4, Vector3, Point3};
+use nalgebra::{Matrix4, Point3, Vector3};
+use vizuara_3d::{Light, LightType, Material};
+use vizuara_core::{Result, VizuaraError};
 use wgpu::{
-    Buffer, BindGroup, BindGroupLayout, RenderPipeline, Surface, SurfaceConfiguration,
-    util::DeviceExt, BufferUsages, ShaderStages, BindingType, BufferBindingType,
+    util::DeviceExt, BindGroup, BindGroupLayout, BindingType, Buffer, BufferBindingType,
+    BufferUsages, RenderPipeline, ShaderStages, Surface, SurfaceConfiguration,
 };
 use winit::window::Window;
-use vizuara_core::{Result, VizuaraError};
-use vizuara_3d::{Light, LightType, Material};
 
 /// 支持法向量的顶点结构
 #[repr(C)]
@@ -49,17 +49,17 @@ struct CameraUniform {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 struct LightUniform {
-    position: [f32; 3],      // 12 bytes
-    light_type: f32,         // 4 bytes
-    direction: [f32; 3],     // 12 bytes  
-    intensity: f32,          // 4 bytes
-    color: [f32; 3],         // 12 bytes
-    enabled: f32,            // 4 bytes
-    radius: f32,             // 4 bytes
-    inner_angle: f32,        // 4 bytes
-    _padding: [f32; 2],      // 8 bytes
-    _extra_pad: [f32; 3],    // 12 bytes
-    _pad_end: f32,           // 4 bytes，显式补齐到 80 字节
+    position: [f32; 3],   // 12 bytes
+    light_type: f32,      // 4 bytes
+    direction: [f32; 3],  // 12 bytes
+    intensity: f32,       // 4 bytes
+    color: [f32; 3],      // 12 bytes
+    enabled: f32,         // 4 bytes
+    radius: f32,          // 4 bytes
+    inner_angle: f32,     // 4 bytes
+    _padding: [f32; 2],   // 8 bytes
+    _extra_pad: [f32; 3], // 12 bytes
+    _pad_end: f32,        // 4 bytes，显式补齐到 80 字节
 }
 
 /// 光照统一缓冲区 (WGSL 16字节对齐，24字节头部)
@@ -96,30 +96,30 @@ pub struct Wgpu3DLitRenderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
     adapter: wgpu::Adapter, // 保存adapter引用
-    
+
     // 管线
     render_pipeline: RenderPipeline,
-    
+
     // 绑定组布局
     _camera_bind_group_layout: BindGroupLayout,
     _lighting_bind_group_layout: BindGroupLayout,
     _material_bind_group_layout: BindGroupLayout,
-    
+
     // 统一缓冲区
     camera_buffer: Buffer,
     lighting_buffer: Buffer,
     material_buffer: Buffer,
-    
+
     // 绑定组
     camera_bind_group: BindGroup,
     lighting_bind_group: BindGroup,
     material_bind_group: BindGroup,
-    
+
     // 相机参数
     camera_position: Point3<f32>,
     camera_rotation: (f32, f32), // (yaw, pitch)
     camera_distance: f32,
-    
+
     // 光照系统
     lights: Vec<Light>,
     ambient_color: [f32; 3],
@@ -128,7 +128,10 @@ pub struct Wgpu3DLitRenderer {
 
 impl Wgpu3DLitRenderer {
     /// 创建新的光照渲染器
-    pub async fn new(window: &Window, size: winit::dpi::PhysicalSize<u32>) -> Result<(Self, Surface<'_>)> {
+    pub async fn new(
+        window: &Window,
+        size: winit::dpi::PhysicalSize<u32>,
+    ) -> Result<(Self, Surface<'_>)> {
         // 创建wgpu实例
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
@@ -138,7 +141,8 @@ impl Wgpu3DLitRenderer {
         });
 
         // 创建表面
-        let surface = instance.create_surface(window)
+        let surface = instance
+            .create_surface(window)
             .map_err(|e| VizuaraError::RenderError(format!("Failed to create surface: {}", e)))?;
 
         // 请求适配器
@@ -192,47 +196,58 @@ impl Wgpu3DLitRenderer {
         });
 
         // 创建绑定组布局
-    let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
-                ty: BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-            min_binding_size: std::num::NonZeroU64::new(std::mem::size_of::<CameraUniform>() as u64),
-                },
-                count: None,
-            }],
-            label: Some("camera_bind_group_layout"),
-        });
+        let camera_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: std::num::NonZeroU64::new(
+                            std::mem::size_of::<CameraUniform>() as u64,
+                        ),
+                    },
+                    count: None,
+                }],
+                label: Some("camera_bind_group_layout"),
+            });
 
-    let lighting_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStages::FRAGMENT,
-                ty: BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-            min_binding_size: std::num::NonZeroU64::new(std::mem::size_of::<LightingUniform>() as u64),
-                },
-                count: None,
-            }],
-            label: Some("lighting_bind_group_layout"),
-        });
+        let lighting_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: std::num::NonZeroU64::new(std::mem::size_of::<
+                            LightingUniform,
+                        >()
+                            as u64),
+                    },
+                    count: None,
+                }],
+                label: Some("lighting_bind_group_layout"),
+            });
 
-    let material_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStages::FRAGMENT,
-                ty: BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-            min_binding_size: std::num::NonZeroU64::new(std::mem::size_of::<MaterialUniform>() as u64),
-                },
-                count: None,
-            }],
-            label: Some("material_bind_group_layout"),
-        });
+        let material_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: std::num::NonZeroU64::new(std::mem::size_of::<
+                            MaterialUniform,
+                        >()
+                            as u64),
+                    },
+                    count: None,
+                }],
+                label: Some("material_bind_group_layout"),
+            });
 
         // 创建统一缓冲区
         let camera_buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -285,15 +300,16 @@ impl Wgpu3DLitRenderer {
         });
 
         // 创建渲染管线
-        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[
-                &camera_bind_group_layout,
-                &lighting_bind_group_layout,
-                &material_bind_group_layout,
-            ],
-            push_constant_ranges: &[],
-        });
+        let render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render Pipeline Layout"),
+                bind_group_layouts: &[
+                    &camera_bind_group_layout,
+                    &lighting_bind_group_layout,
+                    &material_bind_group_layout,
+                ],
+                push_constant_ranges: &[],
+            });
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("3D Lit Render Pipeline"),
@@ -340,7 +356,7 @@ impl Wgpu3DLitRenderer {
         let camera_position = Point3::new(0.0, 0.0, 5.0);
         let camera_rotation = (0.0, 0.0);
         let camera_distance = 5.0;
-        
+
         let lights = Light::default_scene();
         let ambient_color = [0.1, 0.1, 0.15];
         let ambient_intensity = 0.3;
@@ -378,11 +394,7 @@ impl Wgpu3DLitRenderer {
     /// 更新相机缓冲区
     fn update_camera_buffer(&self, aspect_ratio: f32) {
         // 计算视图矩阵
-        let view = Matrix4::look_at_rh(
-            &self.camera_position,
-            &Point3::origin(),
-            &Vector3::y(),
-        );
+        let view = Matrix4::look_at_rh(&self.camera_position, &Point3::origin(), &Vector3::y());
 
         // 计算投影矩阵
         let proj = Matrix4::new_perspective(aspect_ratio, 45.0_f32.to_radians(), 0.1, 100.0);
@@ -417,16 +429,30 @@ impl Wgpu3DLitRenderer {
         }; 8];
 
         for (i, light) in self.lights.iter().take(8).enumerate() {
-            let (position, direction, light_type_id, radius, inner_angle) = match &light.light_type {
-                LightType::Directional { direction } => {
-                    ([0.0; 3], [direction.x, direction.y, direction.z], 0.0, 0.0, 0.0)
-                }
+            let (position, direction, light_type_id, radius, inner_angle) = match &light.light_type
+            {
+                LightType::Directional { direction } => (
+                    [0.0; 3],
+                    [direction.x, direction.y, direction.z],
+                    0.0,
+                    0.0,
+                    0.0,
+                ),
                 LightType::Point { position, radius } => {
                     (position.coords.into(), [0.0; 3], 1.0, *radius, 0.0)
                 }
-                LightType::Spot { position, direction, inner_angle, outer_angle } => {
-                    (position.coords.into(), [direction.x, direction.y, direction.z], 2.0, *outer_angle, *inner_angle)
-                }
+                LightType::Spot {
+                    position,
+                    direction,
+                    inner_angle,
+                    outer_angle,
+                } => (
+                    position.coords.into(),
+                    [direction.x, direction.y, direction.z],
+                    2.0,
+                    *outer_angle,
+                    *inner_angle,
+                ),
             };
 
             light_uniforms[i] = LightUniform {
@@ -456,14 +482,17 @@ impl Wgpu3DLitRenderer {
         let binding = [lighting_uniform];
         let buffer_data = bytemuck::cast_slice(&binding);
         println!("🔧 Lighting buffer size: {} bytes", buffer_data.len());
-        println!("🔧 LightUniform size: {} bytes", std::mem::size_of::<LightUniform>());
-        println!("🔧 LightingUniform size: {} bytes", std::mem::size_of::<LightingUniform>());
-        
-        self.queue.write_buffer(
-            &self.lighting_buffer,
-            0,
-            buffer_data,
+        println!(
+            "🔧 LightUniform size: {} bytes",
+            std::mem::size_of::<LightUniform>()
         );
+        println!(
+            "🔧 LightingUniform size: {} bytes",
+            std::mem::size_of::<LightingUniform>()
+        );
+
+        self.queue
+            .write_buffer(&self.lighting_buffer, 0, buffer_data);
     }
 
     /// 更新材质缓冲区
@@ -474,7 +503,11 @@ impl Wgpu3DLitRenderer {
             roughness: material.roughness,
             ao: material.ao,
             _padding1: [0.0; 2],
-            emissive: [material.emissive.r, material.emissive.g, material.emissive.b],
+            emissive: [
+                material.emissive.r,
+                material.emissive.g,
+                material.emissive.b,
+            ],
             _padding2: 0.0,
         };
 
@@ -494,7 +527,7 @@ impl Wgpu3DLitRenderer {
     pub fn rotate_camera(&mut self, delta_yaw: f32, delta_pitch: f32) {
         self.camera_rotation.0 += delta_yaw;
         self.camera_rotation.1 = (self.camera_rotation.1 + delta_pitch).clamp(-1.5, 1.5);
-        
+
         // 更新相机位置 (轨道相机)
         let cos_pitch = self.camera_rotation.1.cos();
         let sin_pitch = self.camera_rotation.1.sin();
@@ -511,7 +544,7 @@ impl Wgpu3DLitRenderer {
     /// 缩放相机 (调整距离)
     pub fn zoom_camera(&mut self, factor: f32) {
         self.camera_distance = (self.camera_distance * factor).clamp(1.0, 50.0);
-        
+
         // 更新相机位置
         let cos_pitch = self.camera_rotation.1.cos();
         let sin_pitch = self.camera_rotation.1.sin();
@@ -558,23 +591,27 @@ impl Wgpu3DLitRenderer {
         self.update_material_buffer(material);
 
         // 创建顶点和索引缓冲区
-        let vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(vertices),
-            usage: BufferUsages::VERTEX,
-        });
+        let vertex_buffer = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(vertices),
+                usage: BufferUsages::VERTEX,
+            });
 
-        let index_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(indices),
-            usage: BufferUsages::INDEX,
-        });
+        let index_buffer = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(indices),
+                usage: BufferUsages::INDEX,
+            });
 
         // 创建深度纹理
-        let output = surface
-            .get_current_texture()
-            .map_err(|e| VizuaraError::RenderError(format!("Failed to get surface texture: {}", e)))?;
-        
+        let output = surface.get_current_texture().map_err(|e| {
+            VizuaraError::RenderError(format!("Failed to get surface texture: {}", e))
+        })?;
+
         let depth_texture = self.device.create_texture(&wgpu::TextureDescriptor {
             size: wgpu::Extent3d {
                 width: output.texture.width(),
@@ -593,12 +630,16 @@ impl Wgpu3DLitRenderer {
         let depth_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         // 获取当前帧
-        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = output
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
 
         // 创建命令编码器
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Render Encoder"),
-        });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            });
 
         // 开始渲染通道
         {

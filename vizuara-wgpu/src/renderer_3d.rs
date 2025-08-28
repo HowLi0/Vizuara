@@ -1,8 +1,8 @@
-use wgpu::util::DeviceExt;
-use winit::window::Window;
-use vizuara_core::{Result, VizuaraError};
 use bytemuck::{Pod, Zeroable};
 use nalgebra::{Matrix4, Point3, Vector3};
+use vizuara_core::{Result, VizuaraError};
+use wgpu::util::DeviceExt;
+use winit::window::Window;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
@@ -21,6 +21,12 @@ impl Vertex3D {
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
 pub struct Uniforms {
     view_proj: [[f32; 4]; 4],
+}
+
+impl Default for Uniforms {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Uniforms {
@@ -42,16 +48,16 @@ pub struct Wgpu3DRenderer {
     pub config: wgpu::SurfaceConfiguration,
     pub size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
-    
+
     // 深度缓冲
     depth_texture: wgpu::Texture,
     depth_view: wgpu::TextureView,
-    
+
     // 统一缓冲区
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
     uniforms: Uniforms,
-    
+
     // 相机参数
     camera_eye: Point3<f32>,
     camera_target: Point3<f32>,
@@ -73,7 +79,8 @@ impl Wgpu3DRenderer {
             ..Default::default()
         });
 
-        let surface = instance.create_surface(window)
+        let surface = instance
+            .create_surface(window)
             .map_err(|e| VizuaraError::RenderError(format!("Failed to create surface: {}", e)))?;
 
         let adapter = instance
@@ -144,19 +151,22 @@ impl Wgpu3DRenderer {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
-        let uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: wgpu::BufferSize::new(std::mem::size_of::<Uniforms>() as u64),
-                },
-                count: None,
-            }],
-            label: Some("uniform_bind_group_layout"),
-        });
+        let uniform_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: wgpu::BufferSize::new(
+                            std::mem::size_of::<Uniforms>() as u64
+                        ),
+                    },
+                    count: None,
+                }],
+                label: Some("uniform_bind_group_layout"),
+            });
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &uniform_bind_group_layout,
@@ -174,11 +184,12 @@ impl Wgpu3DRenderer {
         });
 
         // 创建渲染管线
-        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("3D Render Pipeline Layout"),
-            bind_group_layouts: &[&uniform_bind_group_layout],
-            push_constant_ranges: &[],
-        });
+        let render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("3D Render Pipeline Layout"),
+                bind_group_layouts: &[&uniform_bind_group_layout],
+                push_constant_ranges: &[],
+            });
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("3D Render Pipeline"),
@@ -273,9 +284,13 @@ impl Wgpu3DRenderer {
         let aspect = self.size.width as f32 / self.size.height as f32;
         let proj = Matrix4::new_perspective(aspect, self.fov, self.near, self.far);
         let view = Matrix4::look_at_rh(&self.camera_eye, &self.camera_target, &self.camera_up);
-        
+
         self.uniforms.update_view_proj(&view, &proj);
-        self.queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[self.uniforms]));
+        self.queue.write_buffer(
+            &self.uniform_buffer,
+            0,
+            bytemuck::cast_slice(&[self.uniforms]),
+        );
     }
 
     /// 设置相机位置
@@ -289,18 +304,19 @@ impl Wgpu3DRenderer {
     /// 旋转相机
     pub fn rotate_camera(&mut self, delta_x: f32, delta_y: f32) {
         let distance = (self.camera_eye - self.camera_target).magnitude();
-        
+
         // 球坐标系旋转
-        let mut theta = (self.camera_eye.x - self.camera_target.x).atan2(self.camera_eye.z - self.camera_target.z);
+        let mut theta = (self.camera_eye.x - self.camera_target.x)
+            .atan2(self.camera_eye.z - self.camera_target.z);
         let mut phi = ((self.camera_eye.y - self.camera_target.y) / distance).acos();
-        
+
         theta -= delta_x * 0.01;
         phi = (phi + delta_y * 0.01).clamp(0.1, std::f32::consts::PI - 0.1);
-        
+
         self.camera_eye.x = self.camera_target.x + distance * phi.sin() * theta.cos();
         self.camera_eye.z = self.camera_target.z + distance * phi.sin() * theta.sin();
         self.camera_eye.y = self.camera_target.y + distance * phi.cos();
-        
+
         self.update_uniforms();
     }
 
@@ -309,7 +325,7 @@ impl Wgpu3DRenderer {
         let direction = (self.camera_eye - self.camera_target).normalize();
         let distance = (self.camera_eye - self.camera_target).magnitude();
         let new_distance = (distance + delta * 0.5).clamp(1.0, 50.0);
-        
+
         self.camera_eye = self.camera_target + direction * new_distance;
         self.update_uniforms();
     }
@@ -320,7 +336,7 @@ impl Wgpu3DRenderer {
             self.size = new_size;
             self.config.width = new_size.width;
             self.config.height = new_size.height;
-            
+
             // 重新创建深度纹理
             self.depth_texture = self.device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("depth_texture"),
@@ -333,40 +349,56 @@ impl Wgpu3DRenderer {
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
                 format: wgpu::TextureFormat::Depth32Float,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING,
                 view_formats: &[],
             });
-            
-            self.depth_view = self.depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+            self.depth_view = self
+                .depth_texture
+                .create_view(&wgpu::TextureViewDescriptor::default());
             self.update_uniforms();
         }
     }
 
     /// 渲染3D场景
-    pub fn render_3d(&mut self, surface: &wgpu::Surface, vertices: &[Vertex3D], indices: &[u16]) -> Result<()> {
-        let output = surface
-            .get_current_texture()
-            .map_err(|e| VizuaraError::RenderError(format!("Failed to get surface texture: {}", e)))?;
+    pub fn render_3d(
+        &mut self,
+        surface: &wgpu::Surface,
+        vertices: &[Vertex3D],
+        indices: &[u16],
+    ) -> Result<()> {
+        let output = surface.get_current_texture().map_err(|e| {
+            VizuaraError::RenderError(format!("Failed to get surface texture: {}", e))
+        })?;
 
-        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = output
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
 
         // 创建顶点缓冲区
-        let vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
+        let vertex_buffer = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(vertices),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
 
         // 创建索引缓冲区
-        let index_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(indices),
-            usage: wgpu::BufferUsages::INDEX,
-        });
+        let index_buffer = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(indices),
+                usage: wgpu::BufferUsages::INDEX,
+            });
 
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Render Encoder"),
-        });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            });
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

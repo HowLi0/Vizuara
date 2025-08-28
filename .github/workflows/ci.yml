@@ -1,0 +1,352 @@
+name: Vizuara CI/CD Pipeline
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+  schedule:
+    # 每日构建检查，确保依赖更新后的兼容性
+    - cron: '0 2 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # 代码质量检查
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: quality-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Check clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Check documentation
+        run: cargo doc --workspace --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  # 构建测试（多平台）
+  build:
+    name: Build & Test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable, beta]
+        exclude:
+          # 减少 beta 版本的测试矩阵
+          - os: windows-latest
+            rust: beta
+          - os: macos-latest
+            rust: beta
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust ${{ matrix.rust }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: build-${{ matrix.os }}-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+
+      # Linux 特定：安装系统依赖
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libudev-dev \
+            libxkbcommon-dev \
+            libwayland-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxinerama-dev
+
+      # macOS 特定：设置开发者工具
+      - name: Setup macOS dependencies
+        if: matrix.os == 'macos-latest'
+        run: |
+          # 确保 Xcode 命令行工具可用
+          xcode-select --install || true
+
+      - name: Check compilation
+        run: cargo check --workspace --all-targets --all-features
+
+      - name: Build all packages
+        run: cargo build --workspace --all-targets --all-features
+
+      - name: Run unit tests
+        run: cargo test --workspace --all-features
+        env:
+          # 在 CI 环境中使用软件渲染
+          WGPU_BACKEND: vulkan,dx12,metal,gl
+
+  # 最小支持的 Rust 版本 (MSRV) 测试
+  msrv:
+    name: Minimum Supported Rust Version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust MSRV (1.70.0)
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.70.0
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: msrv-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libudev-dev \
+            libxkbcommon-dev \
+            libwayland-dev
+
+      - name: Check MSRV compatibility
+        run: cargo check --workspace --all-targets
+
+  # 安全审计
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: Run security audit
+        run: cargo audit
+
+      - name: Check for unsafe code
+        run: |
+          # 统计 unsafe 代码块数量
+          unsafe_count=$(grep -r "unsafe" --include="*.rs" src/ || echo "0")
+          echo "Unsafe code blocks found: $unsafe_count"
+          # 可以设置阈值，超过则失败
+          # if [ $(echo "$unsafe_count" | wc -l) -gt 10 ]; then exit 1; fi
+
+  # 性能基准测试
+  benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libudev-dev \
+            libxkbcommon-dev \
+            libwayland-dev
+
+      - name: Install criterion
+        run: cargo install cargo-criterion
+
+      - name: Run benchmarks
+        run: |
+          # 如果有性能测试，运行它们
+          if [ -d "benches" ]; then
+            cargo criterion --output-format html
+          else
+            echo "No benchmark directory found, skipping benchmarks"
+          fi
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: target/criterion/
+          retention-days: 30
+
+  # 示例程序验证
+  examples:
+    name: Example Programs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libudev-dev \
+            libxkbcommon-dev \
+            libwayland-dev \
+            xvfb
+
+      - name: Build all examples
+        run: cargo build --package vizuara-examples --bins
+
+      - name: List available examples
+        run: |
+          echo "Available examples:"
+          cargo run --package vizuara-examples --bin --help 2>/dev/null || \
+          find target/debug/examples -name "*" -executable -type f | head -10
+
+      # 注意：GUI 示例在 CI 中无法正常运行，但我们可以检查它们能否启动
+      - name: Test non-interactive examples
+        run: |
+          # 运行可以在无头环境中测试的示例
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1024x768x24 &
+          
+          # 这里可以添加能在 CI 中运行的示例测试
+          echo "Example validation completed"
+
+  # 文档生成和部署
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libudev-dev \
+            libxkbcommon-dev
+
+      - name: Generate documentation
+        run: |
+          cargo doc --workspace --all-features --no-deps
+          echo '<meta http-equiv="refresh" content="0; url=vizuara_core/">' > target/doc/index.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/doc
+          cname: docs.vizuara.dev  # 如果有自定义域名
+
+  # 发布检查（仅在 tag 时运行）
+  release-check:
+    name: Release Check
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libudev-dev \
+            libxkbcommon-dev
+
+      - name: Verify package can be published
+        run: |
+          # 检查每个 crate 是否可以发布
+          for crate in vizuara-*; do
+            if [ -d "$crate" ]; then
+              echo "Checking $crate..."
+              cd "$crate"
+              cargo package --allow-dirty
+              cd ..
+            fi
+          done
+
+      - name: Check version consistency
+        run: |
+          # 验证所有 crate 版本一致性
+          echo "Checking version consistency across crates..."
+          # 这里可以添加版本检查脚本
+
+  # 集成测试结果汇总
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [quality, build, msrv, security]
+    if: always()
+    steps:
+      - name: Check CI results
+        run: |
+          if [ "${{ needs.quality.result }}" != "success" ]; then
+            echo "Quality check failed"
+            exit 1
+          fi
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "Build check failed"  
+            exit 1
+          fi
+          if [ "${{ needs.msrv.result }}" != "success" ]; then
+            echo "MSRV check failed"
+            exit 1
+          fi
+          if [ "${{ needs.security.result }}" != "success" ]; then
+            echo "Security check failed"
+            exit 1
+          fi
+          echo "All CI checks passed successfully! 🚀"

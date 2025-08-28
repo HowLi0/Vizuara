@@ -1,5 +1,5 @@
-use vizuara_core::{Primitive, Color, Scale, LinearScale};
 use nalgebra::Point2;
+use vizuara_core::{Color, LinearScale, Primitive, Scale};
 
 /// 直方图数据桶
 #[derive(Debug, Clone)]
@@ -17,8 +17,17 @@ pub struct HistogramBin {
 impl HistogramBin {
     pub fn new(start: f32, end: f32, count: usize) -> Self {
         let width = end - start;
-        let density = if width > 0.0 { count as f32 / width } else { 0.0 };
-        Self { start, end, count, density }
+        let density = if width > 0.0 {
+            count as f32 / width
+        } else {
+            0.0
+        };
+        Self {
+            start,
+            end,
+            count,
+            density,
+        }
     }
 
     /// 获取桶的中心位置
@@ -86,7 +95,7 @@ pub struct Histogram {
     bins: Vec<HistogramBin>,
     /// X轴比例尺
     x_scale: Option<LinearScale>,
-    /// Y轴比例尺 
+    /// Y轴比例尺
     y_scale: Option<LinearScale>,
 }
 
@@ -146,13 +155,13 @@ impl Histogram {
         // 计算X轴范围 (数据值范围)
         let min_val = self.bins.first().unwrap().start;
         let max_val = self.bins.last().unwrap().end;
-        
+
         // 计算Y轴范围 (频次范围)
         let max_count = self.bins.iter().map(|b| b.count).max().unwrap_or(0);
 
         self.x_scale = Some(LinearScale::new(min_val, max_val));
         self.y_scale = Some(LinearScale::new(0.0, max_count as f32));
-        
+
         self
     }
 
@@ -166,7 +175,7 @@ impl Histogram {
         // 计算数据范围
         let min_val = self.data.iter().cloned().fold(f32::INFINITY, f32::min);
         let max_val = self.data.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
-        
+
         if min_val >= max_val {
             self.bins.clear();
             return;
@@ -175,13 +184,15 @@ impl Histogram {
         // 确定桶的数量
         let bin_count = match self.binning {
             BinningStrategy::FixedCount(n) => n,
-            BinningStrategy::FixedWidth(width) => {
-                ((max_val - min_val) / width).ceil() as usize
-            },
+            BinningStrategy::FixedWidth(width) => ((max_val - min_val) / width).ceil() as usize,
             BinningStrategy::Auto => {
                 // 使用 Sturges 规则: ceil(log2(n)) + 1
                 let n = self.data.len();
-                if n <= 1 { 1 } else { (n as f32).log2().ceil() as usize + 1 }
+                if n <= 1 {
+                    1
+                } else {
+                    (n as f32).log2().ceil() as usize + 1
+                }
             }
         };
 
@@ -207,15 +218,15 @@ impl Histogram {
             } else {
                 ((value - min_val) / bin_width) as usize
             };
-            
+
             if bin_index < bins.len() {
                 bins[bin_index].count += 1;
                 // 重新计算密度
                 let width = bins[bin_index].width();
-                bins[bin_index].density = if width > 0.0 { 
-                    bins[bin_index].count as f32 / width 
-                } else { 
-                    0.0 
+                bins[bin_index].density = if width > 0.0 {
+                    bins[bin_index].count as f32 / width
+                } else {
+                    0.0
                 };
             }
         }
@@ -244,7 +255,7 @@ impl Histogram {
             let max_val = self.bins.last().unwrap().end;
             LinearScale::new(min_val, max_val)
         };
-        
+
         let y_scale = if let Some(ref scale) = self.y_scale {
             scale.clone()
         } else {
@@ -305,10 +316,10 @@ mod tests {
             .data(&data)
             .binning(BinningStrategy::FixedCount(4))
             .auto_scale();
-        
+
         assert_eq!(hist.data.len(), 8);
         assert_eq!(hist.bins.len(), 4);
-        
+
         // 验证桶的总数据点数等于原始数据数量
         let total_count: usize = hist.bins.iter().map(|b| b.count).sum();
         assert_eq!(total_count, data.len());
@@ -317,10 +328,8 @@ mod tests {
     #[test]
     fn test_auto_binning() {
         let data: Vec<f32> = (0..100).map(|i| i as f32).collect();
-        let hist = Histogram::new()
-            .data(&data)
-            .binning(BinningStrategy::Auto);
-        
+        let hist = Histogram::new().data(&data).binning(BinningStrategy::Auto);
+
         // Sturges 规则: log2(100) + 1 ≈ 8
         assert!(hist.bins.len() >= 7 && hist.bins.len() <= 9);
     }
@@ -331,7 +340,7 @@ mod tests {
         let hist = Histogram::new()
             .data(&data)
             .binning(BinningStrategy::FixedWidth(1.0));
-        
+
         assert_eq!(hist.bins.len(), 5); // 0-1, 1-2, 2-3, 3-4, 4-5
     }
 
@@ -341,7 +350,7 @@ mod tests {
         let hist = Histogram::new()
             .data(&data)
             .binning(BinningStrategy::FixedCount(2));
-        
+
         for bin in &hist.bins {
             if bin.count > 0 {
                 let expected_density = bin.count as f32 / bin.width();
@@ -357,11 +366,11 @@ mod tests {
             .data(&data)
             .binning(BinningStrategy::FixedCount(2))
             .auto_scale();
-        
+
         let plot_area = crate::PlotArea::new(100.0, 100.0, 400.0, 300.0);
         let primitives = hist.generate_primitives(plot_area);
-        
+
         // 应该有2个桶的矩形 (如果两个桶都有数据)
-        assert!(primitives.len() >= 1 && primitives.len() <= 2);
+        assert!(!primitives.is_empty() && primitives.len() <= 2);
     }
 }

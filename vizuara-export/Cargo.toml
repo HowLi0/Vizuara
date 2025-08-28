@@ -1,0 +1,32 @@
+[package]
+name = "vizuara-export"
+version = "0.1.0"
+edition = "2021"
+description = "Export functionality for Vizuara visualization library"
+authors = ["Vizuara Team"]
+
+[dependencies]
+vizuara-core = { path = "../vizuara-core" }
+nalgebra = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# SVG export
+svg = "0.13"
+
+# PNG export  
+image = "0.24"
+tiny-skia = "0.11"
+usvg = "0.35"
+
+# Optional PDF support
+# printpdf = { version = "0.6", optional = true }
+
+[features]
+default = ["svg", "png"]
+svg = []
+png = []
+# pdf = ["printpdf"]
+
+[dev-dependencies]
+tempfile = "3.8"

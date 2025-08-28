@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use crate::{ComponentType, ThemeError, ThemeProperty, ThemeResult, ThemeValue};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use vizuara_core::{Color, Style};
-use crate::{ComponentType, ThemeProperty, ThemeValue, ThemeResult, ThemeError};
 
 /// 主题定义
-/// 
+///
 /// 包含所有组件的样式配置，支持主题继承和自定义
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Theme {
@@ -180,9 +180,10 @@ impl Theme {
 
         for property in &required_globals {
             if !self.globals.contains_key(property) {
-                return Err(ThemeError::InvalidTheme(
-                    format!("缺少必需的全局属性: {:?}", property)
-                ));
+                return Err(ThemeError::InvalidTheme(format!(
+                    "缺少必需的全局属性: {:?}",
+                    property
+                )));
             }
         }
 
@@ -191,7 +192,7 @@ impl Theme {
 }
 
 /// 组件主题
-/// 
+///
 /// 定义单个组件的样式配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ComponentTheme {
@@ -234,10 +235,15 @@ impl ComponentTheme {
     }
 
     /// 设置状态样式
-    pub fn set_state_property(&mut self, state: impl Into<String>, property: ThemeProperty, value: ThemeValue) {
+    pub fn set_state_property(
+        &mut self,
+        state: impl Into<String>,
+        property: ThemeProperty,
+        value: ThemeValue,
+    ) {
         self.states
             .entry(state.into())
-            .or_insert_with(HashMap::new)
+            .or_default()
             .insert(property, value);
     }
 
@@ -312,8 +318,11 @@ mod tests {
     #[test]
     fn test_theme_global_properties() {
         let mut theme = Theme::new("Test", "Test");
-        
-        theme.set_global(ThemeProperty::PrimaryColor, ThemeValue::Color(Color::rgb(1.0, 0.0, 0.0)));
+
+        theme.set_global(
+            ThemeProperty::PrimaryColor,
+            ThemeValue::Color(Color::rgb(1.0, 0.0, 0.0)),
+        );
         theme.set_global(ThemeProperty::FontSize, ThemeValue::Number(14.0));
 
         assert_eq!(
@@ -338,17 +347,23 @@ mod tests {
             component_theme.get_color(&ThemeProperty::PrimaryColor),
             Some(Color::rgb(0.2, 0.6, 0.8))
         );
-        assert_eq!(component_theme.get_number(&ThemeProperty::LineWidth), Some(2.0));
-        assert_eq!(component_theme.get_number(&ThemeProperty::PointSize), Some(5.0));
+        assert_eq!(
+            component_theme.get_number(&ThemeProperty::LineWidth),
+            Some(2.0)
+        );
+        assert_eq!(
+            component_theme.get_number(&ThemeProperty::PointSize),
+            Some(5.0)
+        );
     }
 
     #[test]
     fn test_theme_component_integration() {
         let mut theme = Theme::new("Test", "Test");
-        
-        let scatter_theme = ComponentTheme::new("ScatterPlot")
-            .with_primary_color(Color::rgb(1.0, 0.0, 0.0));
-        
+
+        let scatter_theme =
+            ComponentTheme::new("ScatterPlot").with_primary_color(Color::rgb(1.0, 0.0, 0.0));
+
         theme.add_component(ComponentType::ScatterPlot, scatter_theme);
 
         let component = theme.get_component(&ComponentType::ScatterPlot).unwrap();
@@ -365,17 +380,29 @@ mod tests {
         assert!(theme.validate().is_err());
 
         theme.name = "Test".to_string();
-        theme.set_global(ThemeProperty::PrimaryColor, ThemeValue::Color(Color::rgb(1.0, 0.0, 0.0)));
-        theme.set_global(ThemeProperty::BackgroundColor, ThemeValue::Color(Color::rgb(1.0, 1.0, 1.0)));
-        theme.set_global(ThemeProperty::TextColor, ThemeValue::Color(Color::rgb(0.0, 0.0, 0.0)));
-        
+        theme.set_global(
+            ThemeProperty::PrimaryColor,
+            ThemeValue::Color(Color::rgb(1.0, 0.0, 0.0)),
+        );
+        theme.set_global(
+            ThemeProperty::BackgroundColor,
+            ThemeValue::Color(Color::rgb(1.0, 1.0, 1.0)),
+        );
+        theme.set_global(
+            ThemeProperty::TextColor,
+            ThemeValue::Color(Color::rgb(0.0, 0.0, 0.0)),
+        );
+
         assert!(theme.validate().is_ok());
     }
 
     #[test]
     fn test_get_primary_color() {
         let mut theme = Theme::new("Test", "Test");
-        theme.set_global(ThemeProperty::PrimaryColor, ThemeValue::Color(Color::rgb(1.0, 0.0, 0.0)));
+        theme.set_global(
+            ThemeProperty::PrimaryColor,
+            ThemeValue::Color(Color::rgb(1.0, 0.0, 0.0)),
+        );
 
         // 测试全局颜色
         assert_eq!(
@@ -384,8 +411,8 @@ mod tests {
         );
 
         // 测试组件特定颜色覆盖全局颜色
-        let scatter_theme = ComponentTheme::new("ScatterPlot")
-            .with_primary_color(Color::rgb(0.0, 1.0, 0.0));
+        let scatter_theme =
+            ComponentTheme::new("ScatterPlot").with_primary_color(Color::rgb(0.0, 1.0, 0.0));
         theme.add_component(ComponentType::ScatterPlot, scatter_theme);
 
         assert_eq!(

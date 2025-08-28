@@ -1,5 +1,5 @@
-use vizuara_core::{Primitive, Color, Scale, LinearScale};
 use nalgebra::Point2;
+use vizuara_core::{Color, LinearScale, Primitive, Scale};
 
 /// 柱状图数据点
 #[derive(Debug, Clone)]
@@ -35,7 +35,7 @@ pub struct BarStyle {
     pub fill_color: Color,
     pub stroke_color: Color,
     pub stroke_width: f32,
-    pub bar_width: f32,  // 柱子宽度比例 (0.0-1.0)
+    pub bar_width: f32, // 柱子宽度比例 (0.0-1.0)
 }
 
 impl Default for BarStyle {
@@ -77,8 +77,12 @@ impl BarPlot {
 
     /// 从分离的类别和数值设置数据
     pub fn categories_values(mut self, categories: &[&str], values: &[f32]) -> Self {
-        assert_eq!(categories.len(), values.len(), "Categories and values must have the same length");
-        
+        assert_eq!(
+            categories.len(),
+            values.len(),
+            "Categories and values must have the same length"
+        );
+
         self.data = categories
             .iter()
             .zip(values.iter())
@@ -130,11 +134,11 @@ impl BarPlot {
             let values: Vec<f32> = self.data.iter().map(|d| d.value).collect();
             let min_val = values.iter().fold(f32::INFINITY, |a, &b| a.min(b));
             let max_val = values.iter().fold(f32::NEG_INFINITY, |a, &b| a.max(b));
-            
+
             // 柱状图通常从 0 开始
             let domain_min = if min_val >= 0.0 { 0.0 } else { min_val * 1.1 };
             let domain_max = max_val * 1.1;
-            
+
             self.y_scale = Some(LinearScale::new(domain_min, domain_max));
         }
         self
@@ -172,10 +176,10 @@ impl BarPlot {
             let x = plot_area.x + bar_gap + i as f32 * bar_spacing;
             let value_normalized = y_scale.normalize(bar_data.value);
             let bar_height = value_normalized * plot_area.height;
-            
+
             // 柱子顶部的 Y 坐标
             let bar_top_y = plot_area.y + plot_area.height - bar_height;
-            
+
             // 创建柱子矩形（带样式）
             primitives.push(Primitive::RectangleStyled {
                 min: Point2::new(x, bar_top_y.min(baseline_y)),
@@ -197,7 +201,11 @@ impl BarPlot {
                 size: 10.0,
                 color: Color::rgb(0.1, 0.1, 0.1),
                 h_align: vizuara_core::HorizontalAlign::Center,
-                v_align: if bar_data.value >= 0.0 { vizuara_core::VerticalAlign::Bottom } else { vizuara_core::VerticalAlign::Top },
+                v_align: if bar_data.value >= 0.0 {
+                    vizuara_core::VerticalAlign::Bottom
+                } else {
+                    vizuara_core::VerticalAlign::Top
+                },
             });
 
             // 添加类别标签（在 X 轴下方）
@@ -267,7 +275,7 @@ mod tests {
     fn test_bar_plot_with_data() {
         let data = vec![("A", 10.0), ("B", 20.0), ("C", 15.0)];
         let plot = BarPlot::new().data(&data);
-        
+
         assert_eq!(plot.data_len(), 3);
         assert_eq!(plot.categories(), vec!["A", "B", "C"]);
     }
@@ -277,7 +285,7 @@ mod tests {
         let categories = ["类别1", "类别2", "类别3"];
         let values = [5.0, 10.0, 7.5];
         let plot = BarPlot::new().categories_values(&categories, &values);
-        
+
         assert_eq!(plot.data_len(), 3);
         assert_eq!(plot.categories(), vec!["类别1", "类别2", "类别3"]);
     }
@@ -286,9 +294,9 @@ mod tests {
     fn test_bar_plot_data_bounds() {
         let data = vec![("A", 10.0), ("B", 20.0), ("C", 5.0)];
         let plot = BarPlot::new().data(&data);
-        
+
         let bounds = plot.data_bounds().unwrap();
-        assert_eq!(bounds.0, 5.0);  // min
+        assert_eq!(bounds.0, 5.0); // min
         assert_eq!(bounds.1, 20.0); // max
     }
 
@@ -296,7 +304,7 @@ mod tests {
     fn test_bar_plot_with_negative_values() {
         let data = vec![("A", -5.0), ("B", 10.0), ("C", -2.0)];
         let plot = BarPlot::new().data(&data).auto_scale();
-        
+
         let bounds = plot.data_bounds().unwrap();
         assert_eq!(bounds.0, -5.0);
         assert_eq!(bounds.1, 10.0);
@@ -306,10 +314,10 @@ mod tests {
     fn test_bar_plot_primitive_generation() {
         let data = vec![("A", 10.0), ("B", 20.0)];
         let plot = BarPlot::new().data(&data).auto_scale();
-        
+
         let plot_area = PlotArea::new(100.0, 100.0, 400.0, 300.0);
         let primitives = plot.generate_primitives(plot_area);
-        
+
         // 应该包含：2个矩形 + 2个数值标签 + 2个类别标签 + 可能的基线 = 至少6个图元
         assert!(primitives.len() >= 6);
     }
@@ -321,7 +329,7 @@ mod tests {
             .stroke(Color::rgb(0.0, 0.0, 1.0), 2.0)
             .bar_width(0.6)
             .title("Test Chart");
-        
+
         assert_eq!(plot.style.fill_color, Color::rgb(1.0, 0.0, 0.0));
         assert_eq!(plot.style.stroke_color, Color::rgb(0.0, 0.0, 1.0));
         assert_eq!(plot.style.stroke_width, 2.0);

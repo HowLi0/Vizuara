@@ -13,7 +13,7 @@ impl Vertex {
     pub fn new(position: [f32; 2], color: [f32; 4]) -> Self {
         Self { position, color }
     }
-    
+
     /// 顶点属性描述
     pub const fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {

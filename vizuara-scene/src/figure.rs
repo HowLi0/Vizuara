@@ -1,5 +1,5 @@
-use vizuara_core::{Primitive, Result};
 use crate::Scene;
+use vizuara_core::{Primitive, Result};
 
 /// 图形对象：整个可视化的顶层容器
 pub struct Figure {
@@ -87,8 +87,8 @@ impl Default for Figure {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use vizuara_core::{Color, LinearScale};
     use vizuara_plots::{PlotArea, ScatterPlot};
-    use vizuara_core::{LinearScale, Color};
 
     #[test]
     fn test_figure_creation() {
@@ -101,13 +101,13 @@ mod tests {
     fn test_figure_with_scene() {
         let plot_area = PlotArea::new(100.0, 100.0, 400.0, 300.0);
         let scene = Scene::new(plot_area);
-        
+
         let figure = Figure::new(800.0, 600.0)
             .title("Test Figure")
             .add_scene(scene);
-        
+
         assert_eq!(figure.scene_count(), 1);
-        
+
         let primitives = figure.generate_primitives();
         assert!(!primitives.is_empty());
     }
@@ -116,34 +116,37 @@ mod tests {
     fn test_complete_example() {
         // 创建测试数据
         let data = vec![(1.0, 2.0), (2.0, 3.5), (3.0, 1.8), (4.0, 4.2)];
-        
+
         // 创建散点图
         let scatter = ScatterPlot::new()
             .data(&data)
             .color(Color::rgb(0.8, 0.2, 0.2))
             .size(8.0)
             .auto_scale();
-        
+
         // 创建场景
         let plot_area = PlotArea::new(100.0, 100.0, 600.0, 400.0);
         let x_scale = LinearScale::new(0.0, 5.0);
         let y_scale = LinearScale::new(0.0, 5.0);
-        
+
         let scene = Scene::new(plot_area)
             .add_x_axis(x_scale, Some("X Value".to_string()))
             .add_y_axis(y_scale, Some("Y Value".to_string()))
             .add_scatter_plot(scatter)
             .title("Scatter Plot Example");
-        
+
         // 创建图形
         let figure = Figure::new(800.0, 600.0)
             .title("Example Visualization")
             .add_scene(scene);
-        
+
         // 验证能够生成图元
         let primitives = figure.generate_primitives();
         assert!(!primitives.is_empty());
-        
-        println!("Generated {} primitives for complete example", primitives.len());
+
+        println!(
+            "Generated {} primitives for complete example",
+            primitives.len()
+        );
     }
 }
