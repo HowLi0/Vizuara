@@ -156,6 +156,12 @@
 			"type": "shell",
 			"command": "cargo run -p vizuara-examples --bin gui_demo_integrated",
 			"group": "build"
+		},
+		{
+			"label": "cargo-run-axis3d-demo",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin axis3d_demo",
+			"group": "build"
 		}
 	]
 }

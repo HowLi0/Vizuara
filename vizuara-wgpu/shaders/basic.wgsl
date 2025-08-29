@@ -1,5 +1,5 @@
-//顶点着色器
-struct VertexInput {
+// 基础着色器
+struct Vertex {
     @location(0) position: vec2<f32>,
     @location(1) color: vec4<f32>,
 }
@@ -10,16 +10,13 @@ struct VertexOutput {
 }
 
 @vertex
-fn vs_main(
-    model: VertexInput,
-) -> VertexOutput {
+fn vs_main(vertex: Vertex) -> VertexOutput {
     var out: VertexOutput;
-    out.color = model.color;
-    out.clip_position = vec4<f32>(model.position, 0.0, 1.0);
+    out.clip_position = vec4<f32>(vertex.position, 0.0, 1.0);
+    out.color = vertex.color;
     return out;
 }
 
-// 基础片段着色器
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     return in.color;

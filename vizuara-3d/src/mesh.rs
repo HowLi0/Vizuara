@@ -112,26 +112,191 @@ impl Mesh3D {
         Self::from_vertices_indices(&vertices, &indices, Color::rgb(0.8, 0.8, 0.9))
     }
 
-    /// 创建球体网格 (简化版 - icosphere)
-    pub fn sphere(radius: f32, _subdivisions: usize) -> Self {
-        // 简化版：创建八面体然后细分
-        let vertices = [
-            Point3::new(0.0, radius, 0.0),  // 顶点
-            Point3::new(0.0, -radius, 0.0), // 底点
-            Point3::new(radius, 0.0, 0.0),  // 前点
-            Point3::new(-radius, 0.0, 0.0), // 后点
-            Point3::new(0.0, 0.0, radius),  // 右点
-            Point3::new(0.0, 0.0, -radius), // 左点
-        ];
+    /// 创建球体网格 (UV球体，更平滑)
+    pub fn sphere(radius: f32, subdivisions: usize) -> Self {
+        let mut vertices = Vec::new();
+        let mut indices = Vec::new();
 
-        let indices = [
-            // 上半球
-            0, 2, 4, 0, 4, 3, 0, 3, 5, 0, 5, 2, // 下半球
-            1, 4, 2, 1, 3, 4, 1, 5, 3, 1, 2, 5,
-        ];
+        let rings = subdivisions.max(3);
+        let sectors = (rings * 2).max(6);
 
-        // TODO: 实现细分算法
+        // 生成顶点
+        for i in 0..=rings {
+            let latitude = std::f32::consts::PI * i as f32 / rings as f32 - std::f32::consts::PI / 2.0;
+            let y = radius * latitude.sin();
+            let radius_at_latitude = radius * latitude.cos();
+
+            for j in 0..=sectors {
+                let longitude = 2.0 * std::f32::consts::PI * j as f32 / sectors as f32;
+                let x = radius_at_latitude * longitude.cos();
+                let z = radius_at_latitude * longitude.sin();
+
+                vertices.push(Point3::new(x, y, z));
+            }
+        }
+
+        // 生成索引
+        for i in 0..rings {
+            let ring_start = i * (sectors + 1);
+            let next_ring_start = (i + 1) * (sectors + 1);
+
+            for j in 0..sectors {
+                let current = ring_start + j;
+                let next = ring_start + j + 1;
+                let current_next_ring = next_ring_start + j;
+                let next_next_ring = next_ring_start + j + 1;
+
+                // 第一个三角形
+                indices.push(current);
+                indices.push(next_next_ring);
+                indices.push(next);
+
+                // 第二个三角形
+                indices.push(current);
+                indices.push(current_next_ring);
+                indices.push(next_next_ring);
+            }
+        }
+
         Self::from_vertices_indices(&vertices, &indices, Color::rgb(0.7, 0.9, 0.7))
+    }
+
+    /// 创建圆柱体网格
+    pub fn cylinder(radius: f32, height: f32, segments: usize) -> Self {
+        let mut vertices = Vec::new();
+        let mut indices = Vec::new();
+
+        let segments = segments.max(3);
+        let half_height = height / 2.0;
+
+        // 底面中心点
+        vertices.push(Point3::new(0.0, -half_height, 0.0));
+        // 顶面中心点
+        vertices.push(Point3::new(0.0, half_height, 0.0));
+
+        // 底面和顶面圆周点
+        for i in 0..segments {
+            let angle = 2.0 * std::f32::consts::PI * i as f32 / segments as f32;
+            let x = radius * angle.cos();
+            let z = radius * angle.sin();
+
+            // 底面点
+            vertices.push(Point3::new(x, -half_height, z));
+            // 顶面点
+            vertices.push(Point3::new(x, half_height, z));
+        }
+
+        // 底面三角形
+        for i in 0..segments {
+            let next = (i + 1) % segments;
+            indices.extend([0, 2 + i * 2, 2 + next * 2]);
+        }
+
+        // 顶面三角形
+        for i in 0..segments {
+            let next = (i + 1) % segments;
+            indices.extend([1, 3 + next * 2, 3 + i * 2]);
+        }
+
+        // 侧面四边形（两个三角形）
+        for i in 0..segments {
+            let next = (i + 1) % segments;
+            let bottom_current = 2 + i * 2;
+            let top_current = 3 + i * 2;
+            let bottom_next = 2 + next * 2;
+            let top_next = 3 + next * 2;
+
+            // 第一个三角形
+            indices.extend([bottom_current, top_current, bottom_next]);
+            // 第二个三角形
+            indices.extend([bottom_next, top_current, top_next]);
+        }
+
+        Self::from_vertices_indices(&vertices, &indices, Color::rgb(0.9, 0.7, 0.7))
+    }
+
+    /// 创建圆锥体网格
+    pub fn cone(radius: f32, height: f32, segments: usize) -> Self {
+        let mut vertices = Vec::new();
+        let mut indices = Vec::new();
+
+        let segments = segments.max(3);
+
+        // 底面中心点
+        vertices.push(Point3::new(0.0, 0.0, 0.0));
+        // 顶点
+        vertices.push(Point3::new(0.0, height, 0.0));
+
+        // 底面圆周点
+        for i in 0..segments {
+            let angle = 2.0 * std::f32::consts::PI * i as f32 / segments as f32;
+            let x = radius * angle.cos();
+            let z = radius * angle.sin();
+            vertices.push(Point3::new(x, 0.0, z));
+        }
+
+        // 底面三角形
+        for i in 0..segments {
+            let next = (i + 1) % segments;
+            indices.extend([0, 2 + i, 2 + next]);
+        }
+
+        // 侧面三角形
+        for i in 0..segments {
+            let next = (i + 1) % segments;
+            indices.extend([1, 2 + next, 2 + i]);
+        }
+
+        Self::from_vertices_indices(&vertices, &indices, Color::rgb(0.8, 0.8, 0.6))
+    }
+
+    /// 创建环面（甜甜圈）网格
+    pub fn torus(major_radius: f32, minor_radius: f32, major_segments: usize, minor_segments: usize) -> Self {
+        let mut vertices = Vec::new();
+        let mut indices = Vec::new();
+
+        let major_segments = major_segments.max(3);
+        let minor_segments = minor_segments.max(3);
+
+        // 生成顶点
+        for i in 0..major_segments {
+            let u = 2.0 * std::f32::consts::PI * i as f32 / major_segments as f32;
+            let cos_u = u.cos();
+            let sin_u = u.sin();
+
+            for j in 0..minor_segments {
+                let v = 2.0 * std::f32::consts::PI * j as f32 / minor_segments as f32;
+                let cos_v = v.cos();
+                let sin_v = v.sin();
+
+                let x = (major_radius + minor_radius * cos_v) * cos_u;
+                let y = minor_radius * sin_v;
+                let z = (major_radius + minor_radius * cos_v) * sin_u;
+
+                vertices.push(Point3::new(x, y, z));
+            }
+        }
+
+        // 生成索引
+        for i in 0..major_segments {
+            let next_i = (i + 1) % major_segments;
+
+            for j in 0..minor_segments {
+                let next_j = (j + 1) % minor_segments;
+
+                let a = i * minor_segments + j;
+                let b = next_i * minor_segments + j;
+                let c = next_i * minor_segments + next_j;
+                let d = i * minor_segments + next_j;
+
+                // 第一个三角形
+                indices.extend([a, b, d]);
+                // 第二个三角形
+                indices.extend([b, c, d]);
+            }
+        }
+
+        Self::from_vertices_indices(&vertices, &indices, Color::rgb(0.9, 0.6, 0.9))
     }
 
     /// 获取三角形数量

@@ -1,14 +1,18 @@
+pub mod axis3d;
 pub mod camera;
 pub mod lighting;
 pub mod mesh;
 pub mod scatter3d;
 pub mod surface;
+pub mod volume;
 
+pub use axis3d::*;
 pub use camera::*;
 pub use lighting::*;
 pub use mesh::*;
 pub use scatter3d::*;
 pub use surface::*;
+pub use volume::*;
 
 /// 3D边界框类型：((x_min, x_max), (y_min, y_max), (z_min, z_max))
 pub type BoundingBox3D = ((f32, f32), (f32, f32), (f32, f32));

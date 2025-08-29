@@ -44,12 +44,16 @@ name = "boxplot_demo"
 path = "src/boxplot_demo.rs"
 
 [[bin]]
-name = "demo_3d"
-path = "src/demo_3d.rs"
-
-[[bin]]
 name = "real_3d_demo"
 path = "src/real_3d_demo.rs"
+
+[[bin]]
+name = "volume_demo"
+path = "src/volume_demo.rs"
+
+[[bin]]
+name = "advanced_3d_demo"
+path = "src/advanced_3d_demo.rs"
 
 [[bin]]
 name = "lighting_3d_demo"
@@ -96,6 +100,10 @@ name = "sankey_demo"
 path = "src/sankey_demo.rs"
 
 [[bin]]
+name = "axis3d_demo"
+path = "src/axis3d_demo.rs"
+
+[[bin]]
 name = "treemap_demo"
 path = "src/treemap_demo.rs"
 
@@ -120,4 +128,5 @@ winit = { workspace = true }
 nalgebra = { workspace = true }
 tokio ={workspace=true}
 pollster = "0.3"
+wgpu = { workspace = true }
 rand = "0.8"

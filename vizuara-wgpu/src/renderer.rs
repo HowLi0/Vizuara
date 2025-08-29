@@ -215,7 +215,7 @@ impl WgpuRenderer {
     ) -> Result<wgpu::RenderPipeline> {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shaders/basic.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/basic.wgsl").into()),
         });
 
         let render_pipeline_layout =

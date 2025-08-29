@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let metal_material = Material::metal(Color::rgb(0.8, 0.8, 0.9));
 
     // 2. 塑料表面
-    let plastic_vertices = generate_surface_vertices();
+    let plastic_vertices = generate_surface_vertices([0.0, 0.0, 2.0]); // 放置在Z轴上方
     let plastic_material = Material::plastic(Color::rgb(1.0, 0.4, 0.4));
 
     // 3. 玻璃立方体
@@ -108,25 +108,30 @@ fn generate_sphere_vertices(
 }
 
 /// 生成表面顶点
-fn generate_surface_vertices() -> Vec<Vertex3DLit> {
+fn generate_surface_vertices(offset: [f32; 3]) -> Vec<Vertex3DLit> {
     let mut vertices = Vec::new();
     let resolution = 40;
 
     for i in 0..resolution {
         for j in 0..resolution {
-            let x1 = -2.0 + (4.0 * i as f32) / resolution as f32;
-            let y1 = -2.0 + (4.0 * j as f32) / resolution as f32;
-            let x2 = -2.0 + (4.0 * (i + 1) as f32) / resolution as f32;
-            let y2 = -2.0 + (4.0 * (j + 1) as f32) / resolution as f32;
+            let x1 = -2.0 + (4.0 * i as f32) / resolution as f32 + offset[0];
+            let y1 = -2.0 + (4.0 * j as f32) / resolution as f32 + offset[1];
+            let x2 = -2.0 + (4.0 * (i + 1) as f32) / resolution as f32 + offset[0];
+            let y2 = -2.0 + (4.0 * (j + 1) as f32) / resolution as f32 + offset[1];
 
-            let z1 = 0.5 * (x1 * x1 + y1 * y1).sin();
-            let z2 = 0.5 * (x2 * x2 + y1 * y1).sin();
-            let z3 = 0.5 * (x1 * x1 + y2 * y2).sin();
-            let z4 = 0.5 * (x2 * x2 + y2 * y2).sin();
+            let base_x1 = x1 - offset[0];
+            let base_y1 = y1 - offset[1];
+            let base_x2 = x2 - offset[0];
+            let base_y2 = y2 - offset[1];
+
+            let z1 = 0.5 * (base_x1 * base_x1 + base_y1 * base_y1).sin() + offset[2];
+            let z2 = 0.5 * (base_x2 * base_x2 + base_y1 * base_y1).sin() + offset[2];
+            let z3 = 0.5 * (base_x1 * base_x1 + base_y2 * base_y2).sin() + offset[2];
+            let z4 = 0.5 * (base_x2 * base_x2 + base_y2 * base_y2).sin() + offset[2];
 
             // 计算表面法向量 (简化)
-            let dx = 1.0 * (x1 * x1 + y1 * y1).cos() * 2.0 * x1;
-            let dy = 1.0 * (x1 * x1 + y1 * y1).cos() * 2.0 * y1;
+            let dx = 1.0 * (base_x1 * base_x1 + base_y1 * base_y1).cos() * 2.0 * base_x1;
+            let dy = 1.0 * (base_x1 * base_x1 + base_y1 * base_y1).cos() * 2.0 * base_y1;
             let normal_len = (dx * dx + dy * dy + 1.0).sqrt();
             let normal = [-dx / normal_len, -dy / normal_len, 1.0 / normal_len];
 
@@ -301,6 +306,11 @@ async fn run_lit_3d_window(
     renderer.set_ambient_light([0.05, 0.05, 0.1], 0.2);
     println!("💡 光照系统配置完成");
 
+    // 设置相机位置以查看所有物体
+    // 金属球体在(-3, 0, 0), 塑料表面在(0, 0, 2), 玻璃立方体在(3, 0, 0)
+    renderer.set_camera_position(Point3::new(0.0, 5.0, 8.0)); // 从上方和后方观察
+    println!("📷 相机位置已设置");
+
     // 统计渲染数据
     let total_vertices: usize = objects.iter().map(|(vertices, _)| vertices.len()).sum();
     println!(
@@ -408,21 +418,24 @@ async fn run_lit_3d_window(
                         },
 
                         WindowEvent::RedrawRequested => {
-                            // 渲染所有物体
+                            // 使用批量渲染方法渲染所有物体
                             let aspect_ratio = size.width as f32 / size.height as f32;
 
-                            for (vertices, material) in &objects {
-                                let indices: Vec<u16> = (0..vertices.len() as u16).collect();
+                            // 准备渲染数据
+                            let render_objects: Vec<(Vec<Vertex3DLit>, Vec<u16>, Material)> = objects
+                                .iter()
+                                .map(|(vertices, material)| {
+                                    let indices: Vec<u16> = (0..vertices.len() as u16).collect();
+                                    (vertices.clone(), indices, material.clone())
+                                })
+                                .collect();
 
-                                if let Err(e) = renderer.render(
-                                    &surface,
-                                    vertices,
-                                    &indices,
-                                    material,
-                                    aspect_ratio,
-                                ) {
-                                    eprintln!("❌ 渲染错误: {}", e);
-                                }
+                            if let Err(e) = renderer.render_multiple(
+                                &surface,
+                                &render_objects,
+                                aspect_ratio,
+                            ) {
+                                eprintln!("❌ 渲染错误: {}", e);
                             }
                         }
 
@@ -431,7 +444,8 @@ async fn run_lit_3d_window(
                 }
 
                 Event::AboutToWait => {
-                    window_clone.request_redraw();
+                    // 移除持续重绘，只在需要时重绘
+                    // window_clone.request_redraw();
                 }
 
                 _ => {}
