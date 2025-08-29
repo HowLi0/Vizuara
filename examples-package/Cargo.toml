@@ -111,6 +111,22 @@ path = "src/treemap_demo.rs"
 name = "parallel_demo"
 path = "src/parallel_demo.rs"
 
+[[bin]]
+name = "easy_api_demo"
+path = "src/easy_api_demo.rs"
+
+[[bin]]
+name = "easy_api_enhanced_demo"
+path = "src/easy_api_enhanced_demo.rs"
+
+[[bin]]
+name = "easy_api_comprehensive_demo"
+path = "src/easy_api_comprehensive_demo.rs"
+
+[[bin]]
+name = "easy_api_scientific_demo"
+path = "src/easy_api_scientific_demo.rs"
+
 
 [dependencies]
 vizuara-core = { path = "../vizuara-core" }
@@ -124,6 +140,7 @@ vizuara-3d = { path = "../vizuara-3d" }
 vizuara-animation = { path = "../vizuara-animation" }
 vizuara-themes = { path = "../vizuara-themes" }
 vizuara-export = { path = "../vizuara-export" }
+vizuara-easy = { path = "../vizuara-easy" }
 winit = { workspace = true }
 nalgebra = { workspace = true }
 tokio ={workspace=true}

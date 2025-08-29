@@ -15,3 +15,8 @@ nalgebra = { workspace = true }
 bytemuck = { workspace = true, features = ["derive"] }
 anyhow = { workspace = true }
 glyphon = "0.5"
+
+[features]
+default = ["lit3d"]
+# 可选启用带光照的3D渲染器
+lit3d = []

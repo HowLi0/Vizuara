@@ -162,6 +162,42 @@
 			"type": "shell",
 			"command": "cargo run -p vizuara-examples --bin axis3d_demo",
 			"group": "build"
+		},
+		{
+			"label": "cargo-run-easy-demo-once",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin easy_api_demo",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-easy-demo-once",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin easy_api_demo",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-easy-demo-once",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin easy_api_demo",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-easy-demo-once",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin easy_api_demo",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-easy-demo-once",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin easy_api_demo",
+			"group": "build"
+		},
+		{
+			"label": "cargo-run-easy-demo-once",
+			"type": "shell",
+			"command": "cargo run -p vizuara-examples --bin easy_api_demo",
+			"group": "build"
 		}
 	]
 }

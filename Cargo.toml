@@ -12,6 +12,7 @@ members = [
     "vizuara-3d",
     "vizuara-themes",
     "vizuara-export",
+    "vizuara-easy",
     "examples-package",
 ]
 resolver = "2"

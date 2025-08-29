@@ -2728,6 +2728,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "vizuara-easy"
+version = "0.1.0"
+dependencies = [
+ "nalgebra",
+ "tokio",
+ "vizuara-3d",
+ "vizuara-components",
+ "vizuara-core",
+ "vizuara-plots",
+ "vizuara-scene",
+ "vizuara-wgpu",
+ "vizuara-window",
+ "winit",
+]
+
+[[package]]
 name = "vizuara-examples"
 version = "0.1.0"
 dependencies = [
@@ -2739,6 +2755,7 @@ dependencies = [
  "vizuara-animation",
  "vizuara-components",
  "vizuara-core",
+ "vizuara-easy",
  "vizuara-export",
  "vizuara-interactivity",
  "vizuara-plots",

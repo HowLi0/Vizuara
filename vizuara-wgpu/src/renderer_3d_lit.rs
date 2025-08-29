@@ -1,20 +1,19 @@
 //! 支持光照的高级3D渲染器
 //!
 //! 基于物理的渲染(PBR)和多光源系统
-        // MATLAB 默认视角近似：azimuth ≈ -37.5°, elevation ≈ 30°
-        self.camera_rotation = (-37.5_f32.to_radians(), 30.0_f32.to_radians());
 use nalgebra::{Matrix4, Point3, Vector3, Vector4};
-use vizuara_3d::{Light, LightType, Material, CoordinateSystem3D, Axis3DRenderData, Axis3DDirection};
-use vizuara_core::{Result, VizuaraError, Color};
-use glyphon::{FontSystem, SwashCache, TextAtlas, TextRenderer, Resolution, Buffer as GlyphBuffer, Metrics, Attrs, Family, Shaping, Wrap, TextArea, TextBounds};
+use vizuara_3d::{Axis3DDirection, Axis3DRenderData, CoordinateSystem3D, Light, LightType, Material};
+use vizuara_core::{Color, Result, VizuaraError};
+use glyphon::{
+    Attrs, Buffer as GlyphBuffer, Family, FontSystem, Metrics, Resolution, SwashCache, TextArea,
+    TextAtlas, TextBounds, TextRenderer, Wrap, Shaping,
+};
 use wgpu::{
-    util::DeviceExt, BindGroup, BindGroupLayout, BindingType, Buffer, BufferBindingType,
+    self, util::DeviceExt, BindGroup, BindGroupLayout, BindingType, Buffer, BufferBindingType,
     BufferUsages, RenderPipeline, ShaderStages, Surface, SurfaceConfiguration,
-        self.camera_position = Point3::new(
-            self.camera_distance * cos_pitch * cos_yaw,
-            self.camera_distance * cos_pitch * sin_yaw,
-            self.camera_distance * sin_pitch,
-        );
+};
+use winit::window::Window;
+#[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex3DLit {
     pub position: [f32; 3],

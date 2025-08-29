@@ -1,0 +1,20 @@
+[package]
+name = "vizuara-easy"
+version = "0.1.0"
+edition = "2021"
+description = "Matlab-style easy API for 2D/3D visualization built on Vizuara"
+authors = ["Vizuara Contributors"]
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+vizuara-core = { path = "../vizuara-core" }
+vizuara-plots = { path = "../vizuara-plots" }
+vizuara-scene = { path = "../vizuara-scene" }
+vizuara-components = { path = "../vizuara-components" }
+vizuara-window = { path = "../vizuara-window" }
+vizuara-3d = { path = "../vizuara-3d" }
+vizuara-wgpu = { path = "../vizuara-wgpu" }
+nalgebra = { workspace = true }
+winit = { workspace = true }
+tokio = { workspace = true }
+
