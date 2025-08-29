@@ -26,7 +26,7 @@ impl DensityEstimate {
         let data_min = data.iter().fold(f32::INFINITY, |a, &b| a.min(b));
         let data_max = data.iter().fold(f32::NEG_INFINITY, |a, &b| a.max(b));
         let range = data_max - data_min;
-        
+
         // 自动计算带宽（Silverman's rule of thumb）
         let bw = bandwidth.unwrap_or_else(|| {
             let n = data.len() as f32;
@@ -40,7 +40,7 @@ impl DensityEstimate {
         let start = data_min - margin;
         let end = data_max + margin;
         let step = (end - start) / (num_points - 1) as f32;
-        
+
         let mut points = Vec::new();
         let mut densities = Vec::new();
         let mut max_density: f32 = 0.0;
@@ -48,7 +48,7 @@ impl DensityEstimate {
         for i in 0..num_points {
             let x = start + i as f32 * step;
             let density = Self::gaussian_kde(data, x, bw);
-            
+
             points.push(x);
             densities.push(density);
             max_density = max_density.max(density);
@@ -63,21 +63,20 @@ impl DensityEstimate {
 
     fn calculate_std_dev(data: &[f32]) -> f32 {
         let mean = data.iter().sum::<f32>() / data.len() as f32;
-        let variance = data.iter()
-            .map(|x| (x - mean).powi(2))
-            .sum::<f32>() / data.len() as f32;
+        let variance = data.iter().map(|x| (x - mean).powi(2)).sum::<f32>() / data.len() as f32;
         variance.sqrt()
     }
 
     fn gaussian_kde(data: &[f32], x: f32, bandwidth: f32) -> f32 {
         let n = data.len() as f32;
-        let sum = data.iter()
+        let sum = data
+            .iter()
             .map(|&xi| {
                 let u = (x - xi) / bandwidth;
                 (-0.5 * u * u).exp()
             })
             .sum::<f32>();
-        
+
         sum / (n * bandwidth * (2.0 * std::f32::consts::PI).sqrt())
     }
 }
@@ -141,7 +140,8 @@ impl ViolinStatistics {
         let iqr = q3 - q1;
         let lower_fence = q1 - 1.5 * iqr;
         let upper_fence = q3 + 1.5 * iqr;
-        let outliers = data.iter()
+        let outliers = data
+            .iter()
             .filter(|&&x| x < lower_fence || x > upper_fence)
             .cloned()
             .collect();
@@ -404,11 +404,17 @@ impl ViolinPlot {
             };
 
             // 绘制小提琴形状
-            self.draw_violin_shape(&mut primitives, center_x, violin_width, stats, &normalize_y);
+            self.draw_violin_shape(&mut primitives, center_x, violin_width, stats, normalize_y);
 
             // 绘制箱线图（如果启用）
             if self.style.show_box {
-                self.draw_box_plot(&mut primitives, center_x, group_width * self.style.box_width, stats, &normalize_y);
+                self.draw_box_plot(
+                    &mut primitives,
+                    center_x,
+                    group_width * self.style.box_width,
+                    stats,
+                    normalize_y,
+                );
             }
 
             // 绘制中位数线
@@ -502,7 +508,10 @@ impl ViolinPlot {
             primitives.push(Primitive::Polygon {
                 points: violin_points,
                 fill: self.style.violin_fill_color,
-                stroke: Some((self.style.violin_stroke_color, self.style.violin_stroke_width)),
+                stroke: Some((
+                    self.style.violin_stroke_color,
+                    self.style.violin_stroke_width,
+                )),
             });
         }
     }
@@ -561,7 +570,7 @@ mod tests {
     fn test_violin_statistics() {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let stats = ViolinStatistics::from_data(data);
-        
+
         assert_eq!(stats.median, 3.0);
         assert_eq!(stats.mean, 3.0);
         assert_eq!(stats.min, 1.0);
@@ -572,7 +581,7 @@ mod tests {
     fn test_density_estimation() {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let density = DensityEstimate::from_data(&data, Some(1.0));
-        
+
         assert!(!density.points.is_empty());
         assert!(!density.densities.is_empty());
         assert!(density.max_density > 0.0);
@@ -584,7 +593,7 @@ mod tests {
             ("组A", vec![1.0, 2.0, 3.0, 4.0, 5.0]),
             ("组B", vec![2.0, 3.0, 4.0, 5.0, 6.0]),
         ];
-        
+
         let plot = ViolinPlot::new().from_data_groups(&data_groups);
         assert_eq!(plot.group_count(), 2);
     }

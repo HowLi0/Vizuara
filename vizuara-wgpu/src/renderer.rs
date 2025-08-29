@@ -848,7 +848,11 @@ impl WgpuRenderer {
                         ));
                     }
                 }
-                Primitive::Polyline { points, color, width } => {
+                Primitive::Polyline {
+                    points,
+                    color,
+                    width,
+                } => {
                     if points.len() < 2 {
                         continue;
                     }
@@ -893,7 +897,11 @@ impl WgpuRenderer {
                         ]);
                     }
                 }
-                Primitive::Polygon { points, fill, stroke } => {
+                Primitive::Polygon {
+                    points,
+                    fill,
+                    stroke,
+                } => {
                     if points.len() < 3 {
                         continue;
                     }
@@ -921,7 +929,12 @@ impl WgpuRenderer {
 
                     // 如果有边框，绘制边框
                     if let Some((stroke_color, stroke_width)) = stroke {
-                        let stroke_color_array = [stroke_color.r, stroke_color.g, stroke_color.b, stroke_color.a * style.opacity];
+                        let stroke_color_array = [
+                            stroke_color.r,
+                            stroke_color.g,
+                            stroke_color.b,
+                            stroke_color.a * style.opacity,
+                        ];
                         let half_w = (stroke_width.max(1.0)) / 2.0;
 
                         for i in 0..points.len() {
@@ -963,8 +976,16 @@ impl WgpuRenderer {
                         }
                     }
                 }
-                Primitive::ArcSector { center, radius, start_angle, end_angle, fill, stroke } => {
-                    let segments = ((end_angle - start_angle).abs() * 32.0 / std::f32::consts::PI).max(8.0) as usize;
+                Primitive::ArcSector {
+                    center,
+                    radius,
+                    start_angle,
+                    end_angle,
+                    fill,
+                    stroke,
+                } => {
+                    let segments = ((end_angle - start_angle).abs() * 32.0 / std::f32::consts::PI)
+                        .max(8.0) as usize;
                     let fill_color_array = [fill.r, fill.g, fill.b, fill.a * style.opacity];
 
                     let to_ndc = |(x, y): (f32, f32)| -> [f32; 2] {
@@ -974,20 +995,22 @@ impl WgpuRenderer {
                     };
 
                     let center_ndc = to_ndc((center.x, center.y));
-                    
+
                     // 生成扇形三角形
                     for i in 0..segments {
-                        let angle1 = start_angle + (i as f32) * (end_angle - start_angle) / (segments as f32);
-                        let angle2 = start_angle + ((i + 1) as f32) * (end_angle - start_angle) / (segments as f32);
-                        
+                        let angle1 = start_angle
+                            + (i as f32) * (end_angle - start_angle) / (segments as f32);
+                        let angle2 = start_angle
+                            + ((i + 1) as f32) * (end_angle - start_angle) / (segments as f32);
+
                         let x1 = center.x + radius * angle1.cos();
                         let y1 = center.y + radius * angle1.sin();
                         let x2 = center.x + radius * angle2.cos();
                         let y2 = center.y + radius * angle2.sin();
-                        
+
                         let v1 = to_ndc((x1, y1));
                         let v2 = to_ndc((x2, y2));
-                        
+
                         vertices.extend_from_slice(&[
                             Vertex::new(center_ndc, fill_color_array),
                             Vertex::new(v1, fill_color_array),
@@ -997,14 +1020,21 @@ impl WgpuRenderer {
 
                     // 如果有边框，绘制边框
                     if let Some((stroke_color, stroke_width)) = stroke {
-                        let stroke_color_array = [stroke_color.r, stroke_color.g, stroke_color.b, stroke_color.a * style.opacity];
+                        let stroke_color_array = [
+                            stroke_color.r,
+                            stroke_color.g,
+                            stroke_color.b,
+                            stroke_color.a * style.opacity,
+                        ];
                         let half_w = (stroke_width.max(1.0)) / 2.0;
 
                         // 绘制弧线边框
                         for i in 0..segments {
-                            let angle1 = start_angle + (i as f32) * (end_angle - start_angle) / (segments as f32);
-                            let angle2 = start_angle + ((i + 1) as f32) * (end_angle - start_angle) / (segments as f32);
-                            
+                            let angle1 = start_angle
+                                + (i as f32) * (end_angle - start_angle) / (segments as f32);
+                            let angle2 = start_angle
+                                + ((i + 1) as f32) * (end_angle - start_angle) / (segments as f32);
+
                             let x1 = center.x + radius * angle1.cos();
                             let y1 = center.y + radius * angle1.sin();
                             let x2 = center.x + radius * angle2.cos();
@@ -1040,8 +1070,17 @@ impl WgpuRenderer {
                         }
                     }
                 }
-                Primitive::ArcRing { center, inner_radius, outer_radius, start_angle, end_angle, fill, stroke } => {
-                    let segments = ((end_angle - start_angle).abs() * 32.0 / std::f32::consts::PI).max(8.0) as usize;
+                Primitive::ArcRing {
+                    center,
+                    inner_radius,
+                    outer_radius,
+                    start_angle,
+                    end_angle,
+                    fill,
+                    stroke,
+                } => {
+                    let segments = ((end_angle - start_angle).abs() * 32.0 / std::f32::consts::PI)
+                        .max(8.0) as usize;
                     let fill_color_array = [fill.r, fill.g, fill.b, fill.a * style.opacity];
 
                     let to_ndc = |(x, y): (f32, f32)| -> [f32; 2] {
@@ -1049,29 +1088,31 @@ impl WgpuRenderer {
                         let yn = 1.0 - (y / self.size.height as f32) * 2.0;
                         [xn, yn]
                     };
-                    
+
                     // 生成圆环四边形
                     for i in 0..segments {
-                        let angle1 = start_angle + (i as f32) * (end_angle - start_angle) / (segments as f32);
-                        let angle2 = start_angle + ((i + 1) as f32) * (end_angle - start_angle) / (segments as f32);
-                        
+                        let angle1 = start_angle
+                            + (i as f32) * (end_angle - start_angle) / (segments as f32);
+                        let angle2 = start_angle
+                            + ((i + 1) as f32) * (end_angle - start_angle) / (segments as f32);
+
                         // 内环点
                         let inner_x1 = center.x + inner_radius * angle1.cos();
                         let inner_y1 = center.y + inner_radius * angle1.sin();
                         let inner_x2 = center.x + inner_radius * angle2.cos();
                         let inner_y2 = center.y + inner_radius * angle2.sin();
-                        
+
                         // 外环点
                         let outer_x1 = center.x + outer_radius * angle1.cos();
                         let outer_y1 = center.y + outer_radius * angle1.sin();
                         let outer_x2 = center.x + outer_radius * angle2.cos();
                         let outer_y2 = center.y + outer_radius * angle2.sin();
-                        
+
                         let inner_v1 = to_ndc((inner_x1, inner_y1));
                         let inner_v2 = to_ndc((inner_x2, inner_y2));
                         let outer_v1 = to_ndc((outer_x1, outer_y1));
                         let outer_v2 = to_ndc((outer_x2, outer_y2));
-                        
+
                         // 两个三角形组成四边形
                         vertices.extend_from_slice(&[
                             Vertex::new(inner_v1, fill_color_array),
@@ -1085,14 +1126,21 @@ impl WgpuRenderer {
 
                     // 边框渲染（简化处理）
                     if let Some((stroke_color, stroke_width)) = stroke {
-                        let stroke_color_array = [stroke_color.r, stroke_color.g, stroke_color.b, stroke_color.a * style.opacity];
+                        let stroke_color_array = [
+                            stroke_color.r,
+                            stroke_color.g,
+                            stroke_color.b,
+                            stroke_color.a * style.opacity,
+                        ];
                         let half_w = (stroke_width.max(1.0)) / 2.0;
 
                         // 简化：只绘制内外圆弧边框
                         for i in 0..segments {
-                            let angle1 = start_angle + (i as f32) * (end_angle - start_angle) / (segments as f32);
-                            let angle2 = start_angle + ((i + 1) as f32) * (end_angle - start_angle) / (segments as f32);
-                            
+                            let angle1 = start_angle
+                                + (i as f32) * (end_angle - start_angle) / (segments as f32);
+                            let angle2 = start_angle
+                                + ((i + 1) as f32) * (end_angle - start_angle) / (segments as f32);
+
                             // 外环线段
                             let outer_x1 = center.x + outer_radius * angle1.cos();
                             let outer_y1 = center.y + outer_radius * angle1.sin();
@@ -1140,20 +1188,21 @@ impl WgpuRenderer {
                     };
 
                     let center_ndc = to_ndc((center.x, center.y));
-                    
+
                     // 生成圆形三角形
                     for i in 0..segments {
                         let angle1 = (i as f32) * 2.0 * std::f32::consts::PI / (segments as f32);
-                        let angle2 = ((i + 1) as f32) * 2.0 * std::f32::consts::PI / (segments as f32);
-                        
+                        let angle2 =
+                            ((i + 1) as f32) * 2.0 * std::f32::consts::PI / (segments as f32);
+
                         let x1 = center.x + radius * angle1.cos();
                         let y1 = center.y + radius * angle1.sin();
                         let x2 = center.x + radius * angle2.cos();
                         let y2 = center.y + radius * angle2.sin();
-                        
+
                         let v1 = to_ndc((x1, y1));
                         let v2 = to_ndc((x2, y2));
-                        
+
                         vertices.extend_from_slice(&[
                             Vertex::new(center_ndc, color_array),
                             Vertex::new(v1, color_array),

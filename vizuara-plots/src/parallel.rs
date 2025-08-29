@@ -3,8 +3,8 @@
 //! 用于可视化多维数据，每个维度对应一个垂直轴
 
 use crate::PlotArea;
-use vizuara_core::{Color, Primitive, LinearScale, Scale, HorizontalAlign, VerticalAlign};
 use nalgebra::Point2;
+use vizuara_core::{Color, HorizontalAlign, LinearScale, Primitive, Scale, VerticalAlign};
 
 /// 平行坐标轴
 #[derive(Debug, Clone)]
@@ -178,11 +178,7 @@ impl ParallelCoordinates {
                 let min_val = data[i].iter().fold(f32::INFINITY, |a, &b| a.min(b));
                 let max_val = data[i].iter().fold(f32::NEG_INFINITY, |a, &b| a.max(b));
                 let range = max_val - min_val;
-                let axis = ParallelAxis::new(
-                    name,
-                    min_val - range * 0.05,
-                    max_val + range * 0.05,
-                );
+                let axis = ParallelAxis::new(name, min_val - range * 0.05, max_val + range * 0.05);
                 self.axes.push(axis);
             }
         }
@@ -206,13 +202,13 @@ impl ParallelCoordinates {
     /// 从矩阵数据创建系列
     pub fn from_matrix(mut self, data: &[Vec<f32>], names: Option<&[&str]>) -> Self {
         self.series.clear();
-        
+
         for (i, row) in data.iter().enumerate() {
             let name = names
                 .and_then(|n| n.get(i))
                 .map(|&s| s.to_string())
                 .unwrap_or_else(|| format!("Series {}", i + 1));
-            
+
             let hue = (i as f32 / data.len() as f32) * 360.0;
             let color = Color::rgb(
                 (hue * std::f32::consts::PI / 180.0).sin() * 0.5 + 0.5,
@@ -309,7 +305,7 @@ impl ParallelCoordinates {
             primitives.push(Primitive::Polyline {
                 points: vec![
                     Point2::new(x, axis_start_y),
-                    Point2::new(x, axis_start_y + axis_height)
+                    Point2::new(x, axis_start_y + axis_height),
                 ],
                 color: self.style.axis_color,
                 width: self.style.axis_width,
@@ -336,7 +332,7 @@ impl ParallelCoordinates {
                     primitives.push(Primitive::Polyline {
                         points: vec![
                             Point2::new(x - self.style.tick_size, y),
-                            Point2::new(x + self.style.tick_size, y)
+                            Point2::new(x + self.style.tick_size, y),
                         ],
                         color: self.style.axis_color,
                         width: 1.0,
@@ -364,10 +360,7 @@ impl ParallelCoordinates {
                     let y = axis_start_y + axis_height - t * axis_height;
 
                     primitives.push(Primitive::Polyline {
-                        points: vec![
-                            Point2::new(prev_x, y),
-                            Point2::new(x, y)
-                        ],
+                        points: vec![Point2::new(prev_x, y), Point2::new(x, y)],
                         color: self.style.grid_color,
                         width: self.style.grid_width,
                     });
@@ -389,7 +382,11 @@ impl ParallelCoordinates {
             };
 
             let line_color = Color::rgba(series.color.r, series.color.g, series.color.b, alpha);
-            let line_width = if series.highlighted { series.line_width * 2.0 } else { series.line_width };
+            let line_width = if series.highlighted {
+                series.line_width * 2.0
+            } else {
+                series.line_width
+            };
 
             // 创建折线的点
             let mut line_points = Vec::new();
@@ -446,10 +443,7 @@ impl ParallelCoordinates {
         // 绘制标题
         if let Some(ref title) = self.title {
             primitives.push(Primitive::Text {
-                position: Point2::new(
-                    plot_area.x + plot_area.width / 2.0,
-                    plot_area.y + 15.0,
-                ),
+                position: Point2::new(plot_area.x + plot_area.width / 2.0, plot_area.y + 15.0),
                 content: title.clone(),
                 size: 16.0,
                 color: Color::rgb(0.1, 0.1, 0.1),
@@ -474,21 +468,23 @@ impl ParallelCoordinates {
     /// 获取数据维度统计
     pub fn get_statistics(&self) -> Vec<(String, f32, f32, f32)> {
         let mut stats = Vec::new();
-        
+
         for (i, axis) in self.axes.iter().enumerate() {
-            let values: Vec<f32> = self.series.iter()
+            let values: Vec<f32> = self
+                .series
+                .iter()
                 .filter_map(|s| s.values.get(i).copied())
                 .collect();
-            
+
             if !values.is_empty() {
                 let min = values.iter().fold(f32::INFINITY, |a, &b| a.min(b));
                 let max = values.iter().fold(f32::NEG_INFINITY, |a, &b| a.max(b));
                 let mean = values.iter().sum::<f32>() / values.len() as f32;
-                
+
                 stats.push((axis.name.clone(), min, max, mean));
             }
         }
-        
+
         stats
     }
 }
@@ -518,28 +514,27 @@ mod tests {
             vec![4.0, 5.0, 6.0],
             vec![7.0, 8.0, 9.0],
         ];
-        
+
         let pc = ParallelCoordinates::new().auto_axes(&names, &data);
         assert_eq!(pc.axis_count(), 3);
     }
 
     #[test]
     fn test_from_matrix() {
-        let data = [
-            vec![1.0, 2.0, 3.0],
-            vec![4.0, 5.0, 6.0],
-        ];
+        let data = [vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]];
         let names = ["Series1", "Series2"];
-        
+
         let pc = ParallelCoordinates::new().from_matrix(&data, Some(&names));
         assert_eq!(pc.series_count(), 2);
     }
 
     #[test]
     fn test_brushing() {
+        let axis = ParallelAxis::new("Test", 0.0, 10.0);
         let mut pc = ParallelCoordinates::new()
+            .add_axis(axis)  // 添加一个轴以确保 selected_ranges 有足够的元素
             .enable_brushing(true);
-        
+
         pc = pc.set_axis_range(0, Some((1.0, 5.0)));
         assert_eq!(pc.selected_ranges[0], Some((1.0, 5.0)));
     }
@@ -551,17 +546,17 @@ mod tests {
             ParallelAxis::new("Y", 0.0, 20.0),
             ParallelAxis::new("Z", 0.0, 30.0),
         ];
-        
+
         let series = vec![
             ParallelSeries::new("Data1", vec![5.0, 10.0, 15.0]),
             ParallelSeries::new("Data2", vec![3.0, 15.0, 25.0]),
         ];
-        
+
         let pc = ParallelCoordinates::new()
             .axes(axes)
             .series(series)
             .title("测试平行坐标图");
-        
+
         let plot_area = PlotArea::new(0.0, 0.0, 600.0, 400.0);
         let primitives = pc.generate_primitives(plot_area);
         assert!(!primitives.is_empty());
@@ -573,16 +568,14 @@ mod tests {
             ParallelAxis::new("X", 0.0, 10.0),
             ParallelAxis::new("Y", 0.0, 20.0),
         ];
-        
+
         let series = vec![
             ParallelSeries::new("Data1", vec![1.0, 10.0]),
             ParallelSeries::new("Data2", vec![9.0, 20.0]),
         ];
-        
-        let pc = ParallelCoordinates::new()
-            .axes(axes)
-            .series(series);
-        
+
+        let pc = ParallelCoordinates::new().axes(axes).series(series);
+
         let stats = pc.get_statistics();
         assert_eq!(stats.len(), 2);
         assert_eq!(stats[0].0, "X");

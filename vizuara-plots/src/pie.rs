@@ -99,16 +99,16 @@ impl PieChart {
     /// 创建新的饼图
     pub fn new() -> Self {
         let default_colors = vec![
-            Color::rgb(0.2, 0.6, 0.9),   // 蓝色
-            Color::rgb(0.9, 0.5, 0.2),   // 橙色
-            Color::rgb(0.4, 0.8, 0.4),   // 绿色
-            Color::rgb(0.9, 0.3, 0.3),   // 红色
-            Color::rgb(0.7, 0.4, 0.9),   // 紫色
-            Color::rgb(0.9, 0.9, 0.3),   // 黄色
-            Color::rgb(0.3, 0.9, 0.9),   // 青色
-            Color::rgb(0.9, 0.6, 0.8),   // 粉色
-            Color::rgb(0.5, 0.7, 0.3),   // 橄榄绿
-            Color::rgb(0.8, 0.4, 0.6),   // 暗粉色
+            Color::rgb(0.2, 0.6, 0.9), // 蓝色
+            Color::rgb(0.9, 0.5, 0.2), // 橙色
+            Color::rgb(0.4, 0.8, 0.4), // 绿色
+            Color::rgb(0.9, 0.3, 0.3), // 红色
+            Color::rgb(0.7, 0.4, 0.9), // 紫色
+            Color::rgb(0.9, 0.9, 0.3), // 黄色
+            Color::rgb(0.3, 0.9, 0.9), // 青色
+            Color::rgb(0.9, 0.6, 0.8), // 粉色
+            Color::rgb(0.5, 0.7, 0.3), // 橄榄绿
+            Color::rgb(0.8, 0.4, 0.6), // 暗粉色
         ];
 
         Self {
@@ -248,9 +248,9 @@ impl PieChart {
             let sector_angle = percentage * 2.0 * PI - gap_per_segment;
 
             // 选择颜色
-            let color = item.color.unwrap_or_else(|| {
-                self.default_colors[i % self.default_colors.len()]
-            });
+            let color = item
+                .color
+                .unwrap_or_else(|| self.default_colors[i % self.default_colors.len()]);
 
             // 生成扇形图元
             if self.style.inner_radius > 0.0 {
@@ -305,7 +305,10 @@ impl PieChart {
         // 添加标题
         if let Some(ref title) = self.title {
             primitives.push(Primitive::Text {
-                position: Point2::new(self.center.x, self.center.y - self.style.outer_radius - 30.0),
+                position: Point2::new(
+                    self.center.x,
+                    self.center.y - self.style.outer_radius - 30.0,
+                ),
                 content: title.clone(),
                 size: 16.0,
                 color: Color::rgb(0.2, 0.2, 0.2),
@@ -327,6 +330,7 @@ impl Default for PieChart {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::PlotArea;
 
     #[test]
     fn test_pie_chart_creation() {
@@ -339,7 +343,7 @@ mod tests {
     fn test_pie_chart_data() {
         let data = [("A", 30.0), ("B", 20.0), ("C", 50.0)];
         let chart = PieChart::new().data(&data);
-        
+
         assert_eq!(chart.data_len(), 3);
         assert_eq!(chart.total_value(), 100.0);
     }
@@ -349,17 +353,15 @@ mod tests {
         let labels = ["苹果", "香蕉", "橙子"];
         let values = [40.0, 30.0, 30.0];
         let chart = PieChart::new().labels_values(&labels, &values);
-        
+
         assert_eq!(chart.data_len(), 3);
         assert_eq!(chart.total_value(), 100.0);
     }
 
     #[test]
     fn test_donut_configuration() {
-        let chart = PieChart::new()
-            .donut(30.0, 80.0)
-            .gap_angle(0.1);
-        
+        let chart = PieChart::new().donut(30.0, 80.0).gap_angle(0.1);
+
         assert_eq!(chart.style.inner_radius, 30.0);
         assert_eq!(chart.style.outer_radius, 80.0);
         assert_eq!(chart.style.gap_angle, 0.1);
@@ -368,7 +370,7 @@ mod tests {
     #[test]
     fn test_empty_data_primitives() {
         let chart = PieChart::new();
-        let primitives = chart.generate_primitives(super::PlotArea::new(0.0, 0.0, 400.0, 400.0));
+        let primitives = chart.generate_primitives(PlotArea::new(0.0, 0.0, 400.0, 400.0));
         assert!(primitives.is_empty());
     }
 
@@ -376,7 +378,7 @@ mod tests {
     fn test_single_item_primitives() {
         let data = [("全部", 100.0)];
         let chart = PieChart::new().data(&data);
-        let primitives = chart.generate_primitives(super::PlotArea::new(0.0, 0.0, 400.0, 400.0));
+        let primitives = chart.generate_primitives(PlotArea::new(0.0, 0.0, 400.0, 400.0));
         assert!(!primitives.is_empty());
     }
 }

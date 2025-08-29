@@ -2,7 +2,7 @@
 //!
 //! 展示层次数据可视化功能
 
-use vizuara_plots::{Treemap, TreemapItem, ColorScheme, PlotArea};
+use vizuara_plots::{ColorScheme, PlotArea, Treemap, TreemapItem};
 use vizuara_scene::{Figure, Scene};
 use vizuara_window::show_figure;
 
@@ -46,16 +46,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .show_values(true);
 
     let plot_area = PlotArea::new(60.0, 80.0, 680.0, 440.0);
-    let scene = Scene::new(plot_area)
-        .add_treemap(treemap);
-    
+    let scene = Scene::new(plot_area).add_treemap(treemap);
+
     let figure = Figure::new(800.0, 600.0)
         .title("树状图演示")
         .add_scene(scene);
 
     println!("✅ 树状图演示图形已创建！");
     println!("这个图表展示了公司市值的层次结构，矩形大小代表相对市值。");
-    
+
     show_figure(figure)?;
     Ok(())
 }

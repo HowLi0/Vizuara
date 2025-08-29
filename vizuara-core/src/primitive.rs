@@ -174,7 +174,11 @@ impl Primitive {
                 let max = Point2::new(center.x + radius, center.y + radius);
                 Some((min, max))
             }
-            Primitive::ArcRing { center, outer_radius, .. } => {
+            Primitive::ArcRing {
+                center,
+                outer_radius,
+                ..
+            } => {
                 let min = Point2::new(center.x - outer_radius, center.y - outer_radius);
                 let max = Point2::new(center.x + outer_radius, center.y + outer_radius);
                 Some((min, max))

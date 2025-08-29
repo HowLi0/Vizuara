@@ -3,8 +3,14 @@
 //! 用于可视化流量数据，显示从源到目标的流动
 
 use crate::PlotArea;
-use vizuara_core::{Color, Primitive, HorizontalAlign, VerticalAlign};
 use nalgebra::Point2;
+use vizuara_core::{Color, HorizontalAlign, Primitive, VerticalAlign};
+
+/// 布局计算结果类型别名
+/// 格式: (id, x, y, width, height)
+type NodeLayout = Vec<(String, f32, f32, f32, f32)>;
+/// 格式: (x1, y1, x2, y2, value)
+type LinkLayout = Vec<(f32, f32, f32, f32, f32)>;
 
 /// 桑基图节点
 #[derive(Debug, Clone)]
@@ -87,6 +93,12 @@ pub struct SankeyDiagram {
     title: Option<String>,
 }
 
+impl Default for SankeyDiagram {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SankeyDiagram {
     /// 创建新的桑基图
     pub fn new() -> Self {
@@ -141,22 +153,22 @@ impl SankeyDiagram {
     }
 
     /// 计算简单的层次布局
-    fn compute_layout(&self, plot_area: PlotArea) -> (Vec<(String, f32, f32, f32, f32)>, Vec<(f32, f32, f32, f32, f32)>) {
+    fn compute_layout(&self, plot_area: PlotArea) -> (NodeLayout, LinkLayout) {
         let mut nodes_layout = Vec::new();
         let mut links_layout = Vec::new();
 
         // 简单的垂直分布
         let available_height = plot_area.height - 100.0;
         let node_height = available_height / self.nodes.len() as f32;
-        
+
         for (i, node) in self.nodes.iter().enumerate() {
             let y = plot_area.y + 50.0 + i as f32 * node_height;
             let x = if i < self.nodes.len() / 2 {
-                plot_area.x + 50.0  // 源节点
+                plot_area.x + 50.0 // 源节点
             } else {
-                plot_area.x + plot_area.width - 50.0 - self.style.node_width  // 目标节点
+                plot_area.x + plot_area.width - 50.0 - self.style.node_width // 目标节点
             };
-            
+
             nodes_layout.push((
                 node.id.clone(),
                 x,
@@ -169,9 +181,13 @@ impl SankeyDiagram {
         // 简单的链接布局
         for link in &self.links {
             // 找到源和目标节点的位置
-            let source_pos = nodes_layout.iter().find(|(id, _, _, _, _)| id == &link.source);
-            let target_pos = nodes_layout.iter().find(|(id, _, _, _, _)| id == &link.target);
-            
+            let source_pos = nodes_layout
+                .iter()
+                .find(|(id, _, _, _, _)| id == &link.source);
+            let target_pos = nodes_layout
+                .iter()
+                .find(|(id, _, _, _, _)| id == &link.target);
+
             if let (Some((_, sx, sy, sw, sh)), Some((_, tx, ty, _, _))) = (source_pos, target_pos) {
                 links_layout.push((
                     sx + sw,
@@ -198,13 +214,10 @@ impl SankeyDiagram {
         for (i, (x1, y1, x2, y2, thickness)) in links_layout.iter().enumerate() {
             let link = &self.links[i];
             let color = link.color.unwrap_or(self.style.default_link_color);
-            
+
             // 简单的直线连接
-            let points = vec![
-                Point2::new(*x1, *y1),
-                Point2::new(*x2, *y2),
-            ];
-            
+            let points = vec![Point2::new(*x1, *y1), Point2::new(*x2, *y2)];
+
             primitives.push(Primitive::Polyline {
                 points,
                 color,
@@ -215,7 +228,7 @@ impl SankeyDiagram {
         // 渲染节点
         for (node_id, x, y, width, height) in nodes_layout {
             let node = self.nodes.iter().find(|n| n.id == node_id).unwrap();
-            
+
             primitives.push(Primitive::RectangleStyled {
                 min: Point2::new(x, y),
                 max: Point2::new(x + width, y + height),

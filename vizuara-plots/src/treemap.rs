@@ -3,8 +3,8 @@
 //! 用于可视化层次数据，显示数据项的相对大小
 
 use crate::PlotArea;
-use vizuara_core::{Color, Primitive, HorizontalAlign, VerticalAlign};
 use nalgebra::Point2;
+use vizuara_core::{Color, HorizontalAlign, Primitive, VerticalAlign};
 
 /// 颜色方案
 #[derive(Debug, Clone)]
@@ -73,6 +73,12 @@ pub struct Treemap {
     style: TreemapStyle,
     color_scheme: ColorScheme,
     title: Option<String>,
+}
+
+impl Default for Treemap {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Treemap {
@@ -162,25 +168,28 @@ impl Treemap {
     /// 简单的平铺布局算法
     fn compute_layout(&self, plot_area: PlotArea) -> Vec<(f32, f32, f32, f32, Color, String)> {
         let mut layouts = Vec::new();
-        
+
         let total_value: f32 = self.items.iter().map(|item| item.value).sum();
         if total_value <= 0.0 {
             return layouts;
         }
 
         let available_width = plot_area.width - 2.0 * self.style.padding;
-        let available_height = plot_area.height - 2.0 * self.style.padding - if self.title.is_some() { 40.0 } else { 0.0 };
+        let available_height = plot_area.height
+            - 2.0 * self.style.padding
+            - if self.title.is_some() { 40.0 } else { 0.0 };
         let total_area = available_width * available_height;
 
         let mut current_x = plot_area.x + self.style.padding;
-        let mut current_y = plot_area.y + self.style.padding + if self.title.is_some() { 40.0 } else { 0.0 };
+        let mut current_y =
+            plot_area.y + self.style.padding + if self.title.is_some() { 40.0 } else { 0.0 };
         let mut row_height = 0.0;
         let mut remaining_width = available_width;
 
         for (i, item) in self.items.iter().enumerate() {
             let area_ratio = item.value / total_value;
             let item_area = total_area * area_ratio;
-            
+
             // 计算矩形尺寸
             let aspect_ratio = available_width / available_height;
             let width = (item_area * aspect_ratio).sqrt().min(remaining_width);
@@ -195,11 +204,11 @@ impl Treemap {
             }
 
             let color = item.color.unwrap_or_else(|| self.get_item_color(i));
-            
+
             layouts.push((
                 current_x,
                 current_y,
-                width.max(20.0), // 最小宽度
+                width.max(20.0),  // 最小宽度
                 height.max(15.0), // 最小高度
                 color,
                 item.label.clone(),

@@ -167,12 +167,12 @@ impl RadarChart {
     /// 创建新的雷达图
     pub fn new() -> Self {
         let default_colors = vec![
-            (Color::rgba(0.2, 0.6, 0.9, 0.3), Color::rgb(0.2, 0.6, 0.9)),   // 蓝色
-            (Color::rgba(0.9, 0.5, 0.2, 0.3), Color::rgb(0.9, 0.5, 0.2)),   // 橙色
-            (Color::rgba(0.4, 0.8, 0.4, 0.3), Color::rgb(0.4, 0.8, 0.4)),   // 绿色
-            (Color::rgba(0.9, 0.3, 0.3, 0.3), Color::rgb(0.9, 0.3, 0.3)),   // 红色
-            (Color::rgba(0.7, 0.4, 0.9, 0.3), Color::rgb(0.7, 0.4, 0.9)),   // 紫色
-            (Color::rgba(0.9, 0.9, 0.3, 0.3), Color::rgb(0.9, 0.9, 0.3)),   // 黄色
+            (Color::rgba(0.2, 0.6, 0.9, 0.3), Color::rgb(0.2, 0.6, 0.9)), // 蓝色
+            (Color::rgba(0.9, 0.5, 0.2, 0.3), Color::rgb(0.9, 0.5, 0.2)), // 橙色
+            (Color::rgba(0.4, 0.8, 0.4, 0.3), Color::rgb(0.4, 0.8, 0.4)), // 绿色
+            (Color::rgba(0.9, 0.3, 0.3, 0.3), Color::rgb(0.9, 0.3, 0.3)), // 红色
+            (Color::rgba(0.7, 0.4, 0.9, 0.3), Color::rgb(0.7, 0.4, 0.9)), // 紫色
+            (Color::rgba(0.9, 0.9, 0.3, 0.3), Color::rgb(0.9, 0.9, 0.3)), // 黄色
         ];
 
         Self {
@@ -201,7 +201,8 @@ impl RadarChart {
 
     /// 快速创建维度（所有维度使用相同的范围）
     pub fn simple_dimensions(mut self, names: &[&str], min_value: f32, max_value: f32) -> Self {
-        self.dimensions = names.iter()
+        self.dimensions = names
+            .iter()
             .map(|&name| RadarDimension::new(name, min_value, max_value))
             .collect();
         self
@@ -423,7 +424,8 @@ impl RadarChart {
             }
 
             // 选择颜色
-            let (default_fill, default_line) = self.default_colors[series_idx % self.default_colors.len()];
+            let (default_fill, default_line) =
+                self.default_colors[series_idx % self.default_colors.len()];
             let fill_color = if series.fill_color == Color::rgba(0.2, 0.6, 0.9, 0.3) {
                 default_fill
             } else {
@@ -441,7 +443,7 @@ impl RadarChart {
                 let dimension = &self.dimensions[i];
                 let normalized_value = dimension.normalize(value);
                 let point_radius = self.radius * normalized_value;
-                
+
                 let angle = self.start_angle + (i as f32) * 2.0 * PI / (dim_count as f32);
                 let x = self.center.x + point_radius * angle.cos();
                 let y = self.center.y + point_radius * angle.sin();
@@ -480,7 +482,7 @@ impl RadarChart {
                     let dimension = &self.dimensions[i];
                     let normalized_value = dimension.normalize(value);
                     let point_radius = self.radius * normalized_value;
-                    
+
                     let angle = self.start_angle + (i as f32) * 2.0 * PI / (dim_count as f32);
                     let x = self.center.x + point_radius * angle.cos();
                     let y = self.center.y + point_radius * angle.sin();
@@ -529,7 +531,7 @@ mod tests {
         let chart = RadarChart::new()
             .add_data("系列1", vec![80.0, 60.0, 90.0])
             .add_data("系列2", vec![70.0, 85.0, 75.0]);
-        
+
         assert_eq!(chart.series_count(), 2);
     }
 
@@ -547,7 +549,7 @@ mod tests {
     fn test_simple_dimensions() {
         let names = ["速度", "力量", "技巧"];
         let chart = RadarChart::new().simple_dimensions(&names, 0.0, 10.0);
-        
+
         assert_eq!(chart.dimension_count(), 3);
         assert_eq!(chart.dimensions[0].name, "速度");
         assert_eq!(chart.dimensions[0].min_value, 0.0);

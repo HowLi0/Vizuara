@@ -3,8 +3,8 @@
 //! 用于可视化3D数据的2D表示，显示等值线
 
 use crate::PlotArea;
-use vizuara_core::{Color, Primitive, HorizontalAlign, VerticalAlign};
 use nalgebra::Point2;
+use vizuara_core::{Color, HorizontalAlign, Primitive, VerticalAlign};
 
 /// 等高线级别
 #[derive(Debug, Clone)]
@@ -83,7 +83,11 @@ impl ContourPlot {
         for (i, &x) in x_values.iter().enumerate() {
             for (j, &y) in y_values.iter().enumerate() {
                 if i < z_grid.len() && j < z_grid[i].len() {
-                    data.push(DataPoint3D { x, y, z: z_grid[i][j] });
+                    data.push(DataPoint3D {
+                        x,
+                        y,
+                        z: z_grid[i][j],
+                    });
                 }
             }
         }
@@ -148,14 +152,18 @@ impl ContourPlot {
             }
 
             let z_min = self.data.iter().map(|p| p.z).fold(f32::INFINITY, f32::min);
-            let z_max = self.data.iter().map(|p| p.z).fold(f32::NEG_INFINITY, f32::max);
+            let z_max = self
+                .data
+                .iter()
+                .map(|p| p.z)
+                .fold(f32::NEG_INFINITY, f32::max);
 
             self.style.levels.clear();
-            
+
             for i in 0..count {
                 let t = i as f32 / (count - 1) as f32;
                 let value = z_min + t * (z_max - z_min);
-                
+
                 // 使用颜色渐变
                 let color = if self.style.filled {
                     Color::rgb(t, 0.5, 1.0 - t)
@@ -223,45 +231,47 @@ impl ContourPlot {
         // 绘制等高线
         for level in &plot_copy.style.levels {
             let contour_lines = self.extract_contour_lines(&grid, level.value);
-            
+
             for line in contour_lines {
                 if line.len() < 2 {
                     continue;
                 }
 
-                let screen_points: Vec<Point2<f32>> = line.iter().map(|&(x, y)| {
-                    let screen_x = plot_area.x + (x - grid.x_min) / (grid.x_max - grid.x_min) * plot_area.width;
-                    let screen_y = plot_area.y + plot_area.height - (y - grid.y_min) / (grid.y_max - grid.y_min) * plot_area.height;
-                    Point2::new(screen_x, screen_y)
-                }).collect();
+                let screen_points: Vec<Point2<f32>> = line
+                    .iter()
+                    .map(|&(x, y)| {
+                        let screen_x = plot_area.x
+                            + (x - grid.x_min) / (grid.x_max - grid.x_min) * plot_area.width;
+                        let screen_y = plot_area.y + plot_area.height
+                            - (y - grid.y_min) / (grid.y_max - grid.y_min) * plot_area.height;
+                        Point2::new(screen_x, screen_y)
+                    })
+                    .collect();
 
-                    if self.style.filled {
-                        // 填充区域（简化实现）
-                        if screen_points.len() > 2 {
-                            primitives.push(Primitive::Polygon {
-                                points: screen_points,
-                                fill: level.color,
-                                stroke: Some((level.color, 1.0)),
-                            });
-                        }
-                    } else {
-                        // 绘制等高线
-                        primitives.push(Primitive::Polyline {
+                if self.style.filled {
+                    // 填充区域（简化实现）
+                    if screen_points.len() > 2 {
+                        primitives.push(Primitive::Polygon {
                             points: screen_points,
-                            color: level.color,
-                            width: level.line_width,
+                            fill: level.color,
+                            stroke: Some((level.color, 1.0)),
                         });
                     }
+                } else {
+                    // 绘制等高线
+                    primitives.push(Primitive::Polyline {
+                        points: screen_points,
+                        color: level.color,
+                        width: level.line_width,
+                    });
+                }
             }
         }
 
         // 绘制标题
         if let Some(ref title) = self.title {
             primitives.push(Primitive::Text {
-                position: Point2::new(
-                    plot_area.x + plot_area.width / 2.0,
-                    plot_area.y - 20.0,
-                ),
+                position: Point2::new(plot_area.x + plot_area.width / 2.0, plot_area.y - 20.0),
                 content: title.clone(),
                 size: 14.0,
                 color: Color::rgb(0.1, 0.1, 0.1),
@@ -275,18 +285,26 @@ impl ContourPlot {
 
     /// 创建规则网格
     fn create_grid(&self) -> Grid {
-        let x_min = self.x_range.map(|(min, _)| min).unwrap_or_else(|| 
-            self.data.iter().map(|p| p.x).fold(f32::INFINITY, f32::min)
-        );
-        let x_max = self.x_range.map(|(_, max)| max).unwrap_or_else(|| 
-            self.data.iter().map(|p| p.x).fold(f32::NEG_INFINITY, f32::max)
-        );
-        let y_min = self.y_range.map(|(min, _)| min).unwrap_or_else(|| 
-            self.data.iter().map(|p| p.y).fold(f32::INFINITY, f32::min)
-        );
-        let y_max = self.y_range.map(|(_, max)| max).unwrap_or_else(|| 
-            self.data.iter().map(|p| p.y).fold(f32::NEG_INFINITY, f32::max)
-        );
+        let x_min = self
+            .x_range
+            .map(|(min, _)| min)
+            .unwrap_or_else(|| self.data.iter().map(|p| p.x).fold(f32::INFINITY, f32::min));
+        let x_max = self.x_range.map(|(_, max)| max).unwrap_or_else(|| {
+            self.data
+                .iter()
+                .map(|p| p.x)
+                .fold(f32::NEG_INFINITY, f32::max)
+        });
+        let y_min = self
+            .y_range
+            .map(|(min, _)| min)
+            .unwrap_or_else(|| self.data.iter().map(|p| p.y).fold(f32::INFINITY, f32::min));
+        let y_max = self.y_range.map(|(_, max)| max).unwrap_or_else(|| {
+            self.data
+                .iter()
+                .map(|p| p.y)
+                .fold(f32::NEG_INFINITY, f32::max)
+        });
 
         let width = self.style.grid_resolution;
         let height = self.style.grid_resolution;
@@ -294,8 +312,8 @@ impl ContourPlot {
         let mut values = vec![vec![0.0; width]; height];
 
         // 简单的最近邻插值
-        for j in 0..height {
-            for i in 0..width {
+        for (j, row) in values.iter_mut().enumerate().take(height) {
+            for (i, cell) in row.iter_mut().enumerate().take(width) {
                 let x = x_min + (i as f32 / (width - 1) as f32) * (x_max - x_min);
                 let y = y_min + (j as f32 / (height - 1) as f32) * (y_max - y_min);
 
@@ -311,7 +329,7 @@ impl ContourPlot {
                     }
                 }
 
-                values[j][i] = nearest_z;
+                *cell = nearest_z;
             }
         }
 
@@ -328,39 +346,111 @@ impl ContourPlot {
 
     /// 提取等高线
     fn extract_contour_lines(&self, grid: &Grid, level: f32) -> Vec<Vec<(f32, f32)>> {
-        // 简化的等高线提取算法（Marching Squares的简化版本）
         let mut lines = Vec::new();
-        
+
         let x_step = (grid.x_max - grid.x_min) / (grid.width - 1) as f32;
         let y_step = (grid.y_max - grid.y_min) / (grid.height - 1) as f32;
 
         for j in 0..grid.height - 1 {
             for i in 0..grid.width - 1 {
-                let z00 = grid.values[j][i];
-                let z10 = grid.values[j][i + 1];
-                let z01 = grid.values[j + 1][i];
-                let z11 = grid.values[j + 1][i + 1];
+                let z00 = grid.values[j][i]; // 左下角
+                let z10 = grid.values[j][i + 1]; // 右下角
+                let z01 = grid.values[j + 1][i]; // 左上角
+                let z11 = grid.values[j + 1][i + 1]; // 右上角
 
-                // 检查是否有等高线穿过这个网格单元
-                let min_z = z00.min(z10).min(z01).min(z11);
-                let max_z = z00.max(z10).max(z01).max(z11);
+                // 计算 Marching Squares 配置索引
+                let mut config = 0;
+                if z00 > level {
+                    config |= 1;
+                }
+                if z10 > level {
+                    config |= 2;
+                }
+                if z11 > level {
+                    config |= 4;
+                }
+                if z01 > level {
+                    config |= 8;
+                }
 
-                if level >= min_z && level <= max_z {
-                    // 简单的线性插值找到交点
-                    let x = grid.x_min + i as f32 * x_step;
-                    let y = grid.y_min + j as f32 * y_step;
+                // 网格单元的四个角点坐标
+                let x0 = grid.x_min + i as f32 * x_step;
+                let y0 = grid.y_min + j as f32 * y_step;
+                let x1 = x0 + x_step;
+                let y1 = y0 + y_step;
 
-                    // 这里应该实现完整的Marching Squares算法
-                    // 为了简化，我们只创建一个简单的线段
-                    let mut line = Vec::new();
-                    line.push((x, y));
-                    line.push((x + x_step, y + y_step));
-                    lines.push(line);
+                // 根据配置生成等高线段
+                if let Some(segments) = self.marching_squares_segments(
+                    config,
+                    level,
+                    [(x0, y0), (x1, y0), (x1, y1), (x0, y1)],
+                    [z00, z10, z11, z01],
+                ) {
+                    for segment in segments {
+                        lines.push(segment);
+                    }
                 }
             }
         }
 
         lines
+    }
+
+    /// Marching Squares 算法核心：根据配置生成线段
+    fn marching_squares_segments(
+        &self,
+        config: u8,
+        level: f32,
+        points: [(f32, f32); 4], // [左下, 右下, 右上, 左上]
+        values: [f32; 4],        // [z0, z1, z2, z3]
+    ) -> Option<Vec<Vec<(f32, f32)>>> {
+        let [p0, p1, p2, p3] = points;
+        let [z0, z1, z2, z3] = values;
+
+        // 计算边的中点（通过线性插值）
+        let lerp = |p1: (f32, f32), p2: (f32, f32), v1: f32, v2: f32| -> (f32, f32) {
+            if (v2 - v1).abs() < 1e-6 {
+                // 避免除零
+                ((p1.0 + p2.0) * 0.5, (p1.1 + p2.1) * 0.5)
+            } else {
+                let t = (level - v1) / (v2 - v1);
+                (p1.0 + t * (p2.0 - p1.0), p1.1 + t * (p2.1 - p1.1))
+            }
+        };
+
+        let bottom = lerp(p0, p1, z0, z1); // 底边中点
+        let right = lerp(p1, p2, z1, z2); // 右边中点
+        let top = lerp(p3, p2, z3, z2); // 顶边中点
+        let left = lerp(p0, p3, z0, z3); // 左边中点
+
+        // 根据 Marching Squares 查找表生成线段
+        match config {
+            0 | 15 => None, // 无等高线或完全在等高线上方
+
+            // 单角情况
+            1 => Some(vec![vec![left, bottom]]),
+            2 => Some(vec![vec![bottom, right]]),
+            4 => Some(vec![vec![right, top]]),
+            8 => Some(vec![vec![top, left]]),
+
+            // 相邻两角情况
+            3 => Some(vec![vec![left, right]]),
+            6 => Some(vec![vec![bottom, top]]),
+            9 => Some(vec![vec![top, bottom]]),
+            12 => Some(vec![vec![right, left]]),
+
+            // 对角情况
+            5 => Some(vec![vec![left, bottom], vec![right, top]]),
+            10 => Some(vec![vec![bottom, left], vec![top, right]]),
+
+            // 三角情况（取反）
+            7 => Some(vec![vec![left, top]]),
+            11 => Some(vec![vec![bottom, top]]),
+            13 => Some(vec![vec![right, left]]),
+            14 => Some(vec![vec![left, bottom]]),
+
+            _ => None,
+        }
     }
 
     /// 获取数据点数量
@@ -400,10 +490,26 @@ mod tests {
     #[test]
     fn test_contour_plot_with_data() {
         let data = vec![
-            DataPoint3D { x: 0.0, y: 0.0, z: 1.0 },
-            DataPoint3D { x: 1.0, y: 0.0, z: 2.0 },
-            DataPoint3D { x: 0.0, y: 1.0, z: 3.0 },
-            DataPoint3D { x: 1.0, y: 1.0, z: 4.0 },
+            DataPoint3D {
+                x: 0.0,
+                y: 0.0,
+                z: 1.0,
+            },
+            DataPoint3D {
+                x: 1.0,
+                y: 0.0,
+                z: 2.0,
+            },
+            DataPoint3D {
+                x: 0.0,
+                y: 1.0,
+                z: 3.0,
+            },
+            DataPoint3D {
+                x: 1.0,
+                y: 1.0,
+                z: 4.0,
+            },
         ];
         let plot = ContourPlot::new().data(&data);
         assert_eq!(plot.data_len(), 4);
@@ -414,7 +520,7 @@ mod tests {
         let x_values = vec![0.0, 1.0];
         let y_values = vec![0.0, 1.0];
         let z_grid = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
-        
+
         let plot = ContourPlot::new().from_grid(&x_values, &y_values, &z_grid);
         assert_eq!(plot.data_len(), 4);
     }
@@ -422,8 +528,16 @@ mod tests {
     #[test]
     fn test_auto_levels() {
         let data = vec![
-            DataPoint3D { x: 0.0, y: 0.0, z: 1.0 },
-            DataPoint3D { x: 1.0, y: 1.0, z: 5.0 },
+            DataPoint3D {
+                x: 0.0,
+                y: 0.0,
+                z: 1.0,
+            },
+            DataPoint3D {
+                x: 1.0,
+                y: 1.0,
+                z: 5.0,
+            },
         ];
         let mut plot = ContourPlot::new().data(&data).auto_levels(3);
         plot.generate_auto_levels();
@@ -433,18 +547,85 @@ mod tests {
     #[test]
     fn test_contour_primitives() {
         let data = vec![
-            DataPoint3D { x: 0.0, y: 0.0, z: 1.0 },
-            DataPoint3D { x: 1.0, y: 0.0, z: 2.0 },
-            DataPoint3D { x: 0.0, y: 1.0, z: 3.0 },
-            DataPoint3D { x: 1.0, y: 1.0, z: 4.0 },
+            DataPoint3D {
+                x: 0.0,
+                y: 0.0,
+                z: 1.0,
+            },
+            DataPoint3D {
+                x: 1.0,
+                y: 0.0,
+                z: 2.0,
+            },
+            DataPoint3D {
+                x: 0.0,
+                y: 1.0,
+                z: 3.0,
+            },
+            DataPoint3D {
+                x: 1.0,
+                y: 1.0,
+                z: 4.0,
+            },
         ];
         let plot = ContourPlot::new()
             .data(&data)
             .auto_levels(3)
             .title("测试等高线图");
-        
+
         let plot_area = PlotArea::new(0.0, 0.0, 400.0, 300.0);
         let primitives = plot.generate_primitives(plot_area);
         assert!(!primitives.is_empty());
+    }
+
+    #[test]
+    fn test_marching_squares_segments() {
+        let plot = ContourPlot::new();
+
+        // 测试一个简单的配置：左下角为1，其他角为0
+        let points = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)];
+        let values = [1.0, 0.0, 0.0, 0.0];
+        let level = 0.5;
+        let config = 1; // 只有左下角大于level
+
+        let segments = plot.marching_squares_segments(config, level, points, values);
+        assert!(segments.is_some());
+
+        let segments = segments.unwrap();
+        assert_eq!(segments.len(), 1);
+        assert_eq!(segments[0].len(), 2);
+    }
+
+    #[test]
+    fn test_extract_contour_lines() {
+        let data = vec![
+            DataPoint3D {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            DataPoint3D {
+                x: 1.0,
+                y: 0.0,
+                z: 1.0,
+            },
+            DataPoint3D {
+                x: 0.0,
+                y: 1.0,
+                z: 1.0,
+            },
+            DataPoint3D {
+                x: 1.0,
+                y: 1.0,
+                z: 2.0,
+            },
+        ];
+
+        let plot = ContourPlot::new().data(&data);
+        let grid = plot.create_grid();
+        let lines = plot.extract_contour_lines(&grid, 0.5);
+
+        // 应该有等高线生成
+        assert!(!lines.is_empty());
     }
 }

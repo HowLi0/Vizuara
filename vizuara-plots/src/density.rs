@@ -3,9 +3,9 @@
 //! 用于显示数据的概率密度分布
 
 use crate::PlotArea;
-use vizuara_core::{Color, Primitive, LinearScale, Scale, HorizontalAlign, VerticalAlign};
 use nalgebra::Point2;
 use std::f32::consts::PI;
+use vizuara_core::{Color, HorizontalAlign, LinearScale, Primitive, Scale, VerticalAlign};
 
 /// 密度图数据点
 #[derive(Debug, Clone)]
@@ -178,9 +178,7 @@ impl DensityPlot {
     /// 核函数
     fn kernel_function(&self, u: f32) -> f32 {
         match self.kernel_type {
-            KernelType::Gaussian => {
-                (1.0 / (2.0 * PI).sqrt()) * (-0.5 * u * u).exp()
-            }
+            KernelType::Gaussian => (1.0 / (2.0 * PI).sqrt()) * (-0.5 * u * u).exp(),
             KernelType::Epanechnikov => {
                 if u.abs() <= 1.0 {
                     0.75 * (1.0 - u * u)
@@ -231,14 +229,15 @@ impl DensityPlot {
         let mut curve_points = Vec::new();
         for point in &density_points {
             let screen_x = plot_area.x + x_scale.normalize(point.x) * plot_area.width;
-            let screen_y = plot_area.y + plot_area.height - y_scale.normalize(point.density) * plot_area.height;
+            let screen_y = plot_area.y + plot_area.height
+                - y_scale.normalize(point.density) * plot_area.height;
             curve_points.push(Point2::new(screen_x, screen_y));
         }
 
         // 绘制填充区域
         if self.style.show_area && self.style.fill_color.is_some() {
             let mut fill_points = curve_points.clone();
-            
+
             // 添加底部的点来形成封闭的多边形
             let baseline_y = plot_area.y + plot_area.height;
             fill_points.push(Point2::new(curve_points.last().unwrap().x, baseline_y));
@@ -265,7 +264,7 @@ impl DensityPlot {
             for &data_point in &self.data {
                 let screen_x = plot_area.x + x_scale.normalize(data_point) * plot_area.width;
                 let baseline_y = plot_area.y + plot_area.height;
-                
+
                 primitives.push(Primitive::Circle {
                     center: Point2::new(screen_x, baseline_y - 5.0),
                     radius: self.style.point_size,
@@ -276,10 +275,7 @@ impl DensityPlot {
         // 绘制标题
         if let Some(ref title) = self.title {
             primitives.push(Primitive::Text {
-                position: Point2::new(
-                    plot_area.x + plot_area.width / 2.0,
-                    plot_area.y - 20.0,
-                ),
+                position: Point2::new(plot_area.x + plot_area.width / 2.0, plot_area.y - 20.0),
                 content: title.clone(),
                 size: 14.0,
                 color: Color::rgb(0.1, 0.1, 0.1),
@@ -309,7 +305,7 @@ impl DensityPlot {
 
         let mut sorted = self.data.clone();
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        
+
         let median = if sorted.len() % 2 == 0 {
             (sorted[sorted.len() / 2 - 1] + sorted[sorted.len() / 2]) / 2.0
         } else {
@@ -372,10 +368,10 @@ mod tests {
     #[test]
     fn test_kernel_functions() {
         let plot = DensityPlot::new();
-        
+
         // 测试高斯核
         assert!(plot.kernel_function(0.0) > 0.0);
-        
+
         // 测试Epanechnikov核
         let plot_epan = DensityPlot::new().kernel(KernelType::Epanechnikov);
         assert!(plot_epan.kernel_function(0.0) > 0.0);
@@ -387,7 +383,7 @@ mod tests {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let plot = DensityPlot::new().data(&data);
         let stats = plot.statistics().unwrap();
-        
+
         assert_eq!(stats.mean, 3.0);
         assert_eq!(stats.median, 3.0);
         assert_eq!(stats.min, 1.0);
@@ -398,10 +394,8 @@ mod tests {
     #[test]
     fn test_density_primitives() {
         let data = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-        let plot = DensityPlot::new()
-            .data(&data)
-            .title("测试密度图");
-        
+        let plot = DensityPlot::new().data(&data).title("测试密度图");
+
         let plot_area = PlotArea::new(0.0, 0.0, 400.0, 300.0);
         let primitives = plot.generate_primitives(plot_area);
         assert!(!primitives.is_empty());

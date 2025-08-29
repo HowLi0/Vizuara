@@ -2,9 +2,9 @@ use nalgebra::Point2;
 use vizuara_components::{Axis, AxisDirection};
 use vizuara_core::{LinearScale, Primitive};
 use vizuara_plots::{
-    AreaChart, BarPlot, BoxPlot, ContourPlot, DensityPlot, Heatmap, Histogram, 
-    LinePlot, ParallelCoordinates, PieChart, PlotArea, RadarChart, SankeyDiagram, 
-    ScatterPlot, Treemap, ViolinPlot
+    AreaChart, BarPlot, BoxPlot, ContourPlot, DensityPlot, Heatmap, Histogram, LinePlot,
+    ParallelCoordinates, PieChart, PlotArea, RadarChart, SankeyDiagram, ScatterPlot, Treemap,
+    ViolinPlot,
 };
 
 /// 场景：包含坐标轴和多个图表的绘图区域
@@ -98,7 +98,7 @@ impl PlotRenderer for DensityPlot {
     }
 }
 
-// 为 ContourPlot 实现 PlotRenderer  
+// 为 ContourPlot 实现 PlotRenderer
 impl PlotRenderer for ContourPlot {
     fn generate_primitives(&self, plot_area: PlotArea) -> Vec<Primitive> {
         // 调用 ContourPlot 自己的方法

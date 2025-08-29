@@ -125,12 +125,12 @@ impl AreaChart {
     /// 创建新的面积图
     pub fn new() -> Self {
         let default_colors = vec![
-            (Color::rgba(0.2, 0.6, 0.9, 0.6), Color::rgb(0.1, 0.4, 0.7)),   // 蓝色
-            (Color::rgba(0.9, 0.5, 0.2, 0.6), Color::rgb(0.7, 0.3, 0.1)),   // 橙色
-            (Color::rgba(0.4, 0.8, 0.4, 0.6), Color::rgb(0.2, 0.6, 0.2)),   // 绿色
-            (Color::rgba(0.9, 0.3, 0.3, 0.6), Color::rgb(0.7, 0.1, 0.1)),   // 红色
-            (Color::rgba(0.7, 0.4, 0.9, 0.6), Color::rgb(0.5, 0.2, 0.7)),   // 紫色
-            (Color::rgba(0.9, 0.9, 0.3, 0.6), Color::rgb(0.7, 0.7, 0.1)),   // 黄色
+            (Color::rgba(0.2, 0.6, 0.9, 0.6), Color::rgb(0.1, 0.4, 0.7)), // 蓝色
+            (Color::rgba(0.9, 0.5, 0.2, 0.6), Color::rgb(0.7, 0.3, 0.1)), // 橙色
+            (Color::rgba(0.4, 0.8, 0.4, 0.6), Color::rgb(0.2, 0.6, 0.2)), // 绿色
+            (Color::rgba(0.9, 0.3, 0.3, 0.6), Color::rgb(0.7, 0.1, 0.1)), // 红色
+            (Color::rgba(0.7, 0.4, 0.9, 0.6), Color::rgb(0.5, 0.2, 0.7)), // 紫色
+            (Color::rgba(0.9, 0.9, 0.3, 0.6), Color::rgb(0.7, 0.7, 0.1)), // 黄色
         ];
 
         Self {
@@ -229,14 +229,14 @@ impl AreaChart {
         let y_margin = (y_max - y_min) * 0.1;
 
         self.x_scale = Some(LinearScale::new(x_min - x_margin, x_max + x_margin));
-        
+
         // 对于面积图，Y轴最小值通常设为0或数据最小值
         let y_bottom = match self.style.fill_mode {
             AreaFillMode::ToZero => 0.0,
             AreaFillMode::ToBaseline(baseline) => baseline.min(y_min),
             AreaFillMode::Stacked => 0.0,
         };
-        
+
         self.y_scale = Some(LinearScale::new(y_bottom - y_margin, y_max + y_margin));
         self
     }
@@ -317,7 +317,7 @@ impl AreaChart {
 
             // 生成面积多边形
             let mut area_points = Vec::new();
-            
+
             // 添加数据点
             for point in &series.data {
                 let x_norm = x_scale.normalize(point.x);
@@ -399,13 +399,17 @@ impl AreaChart {
                 all_x_values.insert((point.x * 1000.0).round() as i32);
             }
         }
-        let sorted_x: Vec<f32> = all_x_values.into_iter().map(|x| x as f32 / 1000.0).collect();
+        let sorted_x: Vec<f32> = all_x_values
+            .into_iter()
+            .map(|x| x as f32 / 1000.0)
+            .collect();
 
         // 为每个系列创建堆叠面积
         let mut cumulative_values = vec![0.0; sorted_x.len()];
 
         for (series_idx, series) in self.series.iter().enumerate() {
-            let (default_fill, _default_line) = self.default_colors[series_idx % self.default_colors.len()];
+            let (default_fill, _default_line) =
+                self.default_colors[series_idx % self.default_colors.len()];
             let fill_color = if series.fill_color == Color::rgb(0.2, 0.6, 0.9) {
                 default_fill
             } else {
@@ -419,26 +423,28 @@ impl AreaChart {
             for (i, &x) in sorted_x.iter().enumerate() {
                 // 在当前系列中查找对应的Y值（简单线性插值）
                 let y_value = self.interpolate_y_value(series, x);
-                
+
                 let new_cumulative = cumulative_values[i] + y_value;
-                
+
                 let x_norm = x_scale.normalize(x);
                 let current_y_norm = y_scale.normalize(new_cumulative);
                 let previous_y_norm = y_scale.normalize(cumulative_values[i]);
-                
+
                 let screen_x = plot_area.x + x_norm * plot_area.width;
-                let current_screen_y = plot_area.y + plot_area.height - current_y_norm * plot_area.height;
-                let previous_screen_y = plot_area.y + plot_area.height - previous_y_norm * plot_area.height;
-                
+                let current_screen_y =
+                    plot_area.y + plot_area.height - current_y_norm * plot_area.height;
+                let previous_screen_y =
+                    plot_area.y + plot_area.height - previous_y_norm * plot_area.height;
+
                 current_layer_points.push(Point2::new(screen_x, current_screen_y));
                 previous_layer_points.push(Point2::new(screen_x, previous_screen_y));
-                
+
                 cumulative_values[i] = new_cumulative;
             }
 
             // 创建当前层的多边形
             let mut polygon_points = current_layer_points;
-            
+
             // 添加下层边界（反向）
             previous_layer_points.reverse();
             polygon_points.extend(previous_layer_points);
@@ -462,7 +468,7 @@ impl AreaChart {
         for window in series.data.windows(2) {
             let p1 = &window[0];
             let p2 = &window[1];
-            
+
             if target_x >= p1.x && target_x <= p2.x {
                 // 线性插值
                 let t = (target_x - p1.x) / (p2.x - p1.x);
@@ -499,7 +505,7 @@ mod tests {
     fn test_single_series() {
         let data = [(0.0, 10.0), (1.0, 20.0), (2.0, 15.0)];
         let chart = AreaChart::new().single_series("测试", &data);
-        
+
         assert_eq!(chart.series_count(), 1);
     }
 
@@ -507,11 +513,9 @@ mod tests {
     fn test_multiple_series() {
         let series1 = AreaSeries::new("系列1").data(&[(0.0, 10.0), (1.0, 15.0)]);
         let series2 = AreaSeries::new("系列2").data(&[(0.0, 5.0), (1.0, 8.0)]);
-        
-        let chart = AreaChart::new()
-            .add_series(series1)
-            .add_series(series2);
-        
+
+        let chart = AreaChart::new().add_series(series1).add_series(series2);
+
         assert_eq!(chart.series_count(), 2);
     }
 
@@ -525,7 +529,7 @@ mod tests {
     fn test_area_interpolation() {
         let chart = AreaChart::new();
         let series = AreaSeries::new("test").data(&[(0.0, 0.0), (2.0, 20.0)]);
-        
+
         // 测试中点插值
         let interpolated = chart.interpolate_y_value(&series, 1.0);
         assert_eq!(interpolated, 10.0);

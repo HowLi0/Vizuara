@@ -1,5 +1,10 @@
 # Vizuara 项目综合文档
 
+[![CI](https://github.com/HowLi0/Vizuara/workflows/Vizuara%20CI%2FCD%20Pipeline/badge.svg)](https://github.com/HowLi0/Vizuara/actions)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/HowLi0/Vizuara)
+[![Rust Version](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org)
+[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://github.com/HowLi0/Vizuara)
+
 ## 📖 项目概览
 
 **Vizuara** 是一个用Rust构建的工业级科学计算可视化库，旨在成为Rust生态系统中高性能数据可视化的首选解决方案。
